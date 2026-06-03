@@ -21,6 +21,7 @@ export interface PersonalTransaction {
   type: TransactionType;
   category: string;
   userId?: string;
+  createdAt?: string;
 }
 
 export interface Investment {

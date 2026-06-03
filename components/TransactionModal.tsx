@@ -14,11 +14,11 @@ interface TransactionModalProps {
 }
 
 const CATEGORIES_PT = [
-    'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Investimentos', 'Aporte', 'Assinaturas', 'Outros'
+    'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Investimentos', 'Aporte', 'Assinaturas', 'Salário', 'Financiamento', 'Cartão', 'Empréstimo', 'Outros'
 ];
 
 const CATEGORIES_EN = [
-    'Food', 'Housing', 'Transport', 'Health', 'Education', 'Leisure', 'Investments', 'Contributions', 'Subscriptions', 'Others'
+    'Food', 'Housing', 'Transport', 'Health', 'Education', 'Leisure', 'Investments', 'Contributions', 'Subscriptions', 'Salary', 'Financing', 'Credit Card', 'Loan', 'Others'
 ];
 
 const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, onSave, transaction, language }) => {
