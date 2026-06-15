@@ -378,7 +378,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                   </div>
                   <span className="text-xl font-bold text-white">Money Dashs</span>
               </div>
-              <p className="text-xs">© 2025 Money Dashs. Powered by <span className="text-blue-500 font-bold">GTS AI</span>.</p>
+              <p className="text-xs">© 2025 Money Dashs. Powered by <span className="text-blue-500 font-bold">GTS Global Tech Software</span>.</p>
           </div>
       </footer>
     </div>

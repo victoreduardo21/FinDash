@@ -117,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, activePage, setAct
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800 bg-[#020617]">
                 <div className="flex flex-col">
                     <p className="text-[10px] font-medium text-gray-500">{t('version')} 2.5.0</p>
-                    <p className="text-[9px] text-gray-600 mt-1">{t('developedBy')} <span className="text-blue-500 font-bold">GTS AI</span></p>
+                    <p className="text-[9px] text-gray-600 mt-1">{t('developedBy')} <span className="text-blue-500 font-bold">GTS Global Tech Software</span></p>
                 </div>
             </div>
         </div>
