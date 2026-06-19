@@ -360,7 +360,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                       <p className="text-slate-400 text-sm font-medium mb-10">{language === 'pt-BR' ? 'Especializado' : 'Concierge Support'}</p>
                       <ul className="space-y-4 mb-12 flex-grow">
                           <li className="flex items-center gap-3 text-sm text-slate-600 font-medium"><CheckCircleIcon className="w-5 h-5 text-purple-600" /> {language === 'pt-BR' ? 'Tudo do plano PRO' : 'Everything in PRO'}</li>
-                          <li className="flex items-center gap-3 text-sm text-slate-600 font-medium"><CheckCircleIcon className="w-5 h-5 text-purple-600" /> {language === 'pt-BR' ? 'Assistente WhatsApp' : 'WhatsApp Concierge'}</li>
+                          <li className="flex items-center gap-3 text-sm text-slate-600 font-medium"><CheckCircleIcon className="w-5 h-5 text-purple-600" /> {language === 'pt-BR' ? 'Insights com IA avançado' : 'Advanced AI Insights'}</li>
                           <li className="flex items-center gap-3 text-sm text-slate-600 font-medium"><CheckCircleIcon className="w-5 h-5 text-purple-600" /> {language === 'pt-BR' ? 'pagar Prioritário' : 'Priority Payouts'}</li>
                       </ul>
                       <button onClick={() => onRegister('VIP', billingCycle)} className="w-full py-4 px-6 border border-purple-200 text-purple-600 rounded-xl font-bold text-base hover:bg-purple-50 transition-colors">{language === 'pt-BR' ? 'Assinar VIP' : 'Get VIP Access'}</button>

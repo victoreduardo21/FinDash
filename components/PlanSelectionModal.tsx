@@ -145,7 +145,7 @@ const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({ isOpen, onClose
                             <ul className="space-y-3 text-sm text-gray-600 mt-4 flex-grow">
                                 <li className="flex items-center gap-2"><CheckCircleIcon className="w-4 h-4 text-purple-600 flex-shrink-0" /> <span>Tudo do plano PRO</span></li>
                                 <li className="flex items-center gap-2"><CheckCircleIcon className="w-4 h-4 text-purple-600 flex-shrink-0" /> <span>Prioridade no Suporte</span></li>
-                                <li className="flex items-center gap-2"><CheckCircleIcon className="w-4 h-4 text-purple-600 flex-shrink-0" /> <span className="font-bold">Acesso ao sistema via WhatsApp</span></li>
+                                <li className="flex items-center gap-2"><CheckCircleIcon className="w-4 h-4 text-purple-600 flex-shrink-0" /> <span className="font-bold">Insights com IA avançado</span></li>
                                 <li className="flex items-center gap-2"><CheckCircleIcon className="w-4 h-4 text-purple-600 flex-shrink-0" /> <span>Assistente Financeiro IA</span></li>
                             </ul>
                         </div>
