@@ -62,6 +62,7 @@ const Credits: React.FC<CreditsProps> = ({
     const [tempOverdraftLimit, setTempOverdraftLimit] = useState(currentUser?.overdraftLimit?.toString() || '0');
     
     // New Transaction Form
+    const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
     const [selectedCardId, setSelectedCardId] = useState('');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
@@ -124,25 +125,128 @@ const Credits: React.FC<CreditsProps> = ({
         }
     };
 
+    const handleCardSelection = (cardId: string) => {
+        setSelectedCardId(cardId);
+        if (!cardId) return;
+        const card = creditCards.find(c => c.id === cardId);
+        if (card && card.dueDay) {
+            const today = new Date();
+            let year = today.getFullYear();
+            let month = today.getMonth() + 1; // 1-indexed
+
+            const currentDay = today.getDate();
+            if (card.closingDay && currentDay >= card.closingDay) {
+                month += 1;
+                if (month > 12) {
+                    month = 1;
+                    year += 1;
+                }
+            }
+
+            const targetDay = String(card.dueDay).padStart(2, '0');
+            const targetMonth = String(month).padStart(2, '0');
+            setDate(`${year}-${targetMonth}-${targetDay}`);
+        }
+    };
+
+    const handleOpenNewTransaction = () => {
+        setEditingTransactionId(null);
+        setSelectedCardId('');
+        setDescription('');
+        setAmount('');
+        setInstallments('1');
+        setDate(new Date().toISOString().split('T')[0]);
+        setIsOverdraft(false);
+        setCategory(language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0]);
+        setIsTransactionModalOpen(true);
+    };
+
+    const handleOpenEditTransaction = (tx: CreditTransaction) => {
+        setEditingTransactionId(tx.id);
+        setSelectedCardId(tx.cardId === 'overdraft' ? '' : tx.cardId);
+        setDescription(tx.description);
+        setAmount(tx.amount.toString());
+        setInstallments(tx.totalInstallments.toString());
+        setDate(tx.date);
+        setIsOverdraft(tx.isOverdraft || false);
+        setCategory(tx.category || (tx.isOverdraft ? 'Cheque Especial' : (language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0])));
+        setIsTransactionModalOpen(true);
+    };
+
     const handleSaveTransaction = async () => {
         if (!description || !amount || (!selectedCardId && !isOverdraft)) return;
         try {
             const totalVal = parseFloat(amount);
-            const totalInst = parseInt(installments);
+            const totalInst = parseInt(installments) || 1;
             
-            await api.createCreditTransaction({
-                cardId: isOverdraft ? 'overdraft' : selectedCardId,
-                description,
-                amount: totalVal,
-                installments: 1, 
-                totalInstallments: totalInst,
-                date,
-                category: category || (isOverdraft ? 'Cheque Especial' : 'Cartão de Crédito'),
-                isOverdraft,
-                status: 'PENDING'
-            }, token);
+            const existingTx = editingTransactionId ? creditTransactions.find(t => t.id === editingTransactionId) : null;
+            const status = existingTx ? existingTx.status || 'PENDING' : 'PENDING';
+            const paymentDateVal = existingTx ? existingTx.paymentDate || null : null;
+
+            if (editingTransactionId) {
+                // Ao editar um lançamento existente, atualizamos o registro individual
+                await api.createCreditTransaction({
+                    id: editingTransactionId,
+                    cardId: isOverdraft ? 'overdraft' : selectedCardId,
+                    description,
+                    amount: totalVal,
+                    installments: existingTx ? existingTx.installments || 1 : 1, 
+                    totalInstallments: existingTx ? existingTx.totalInstallments || 1 : 1,
+                    date,
+                    category: category || (isOverdraft ? 'Cheque Especial' : 'Cartão de Crédito'),
+                    isOverdraft,
+                    status: status,
+                    ...(paymentDateVal ? { paymentDate: paymentDateVal } : {})
+                }, token);
+            } else {
+                // Criando novas despesas: se for parcelado, dividimos o valor total e criamos lançamentos futuros
+                if (totalInst > 1 && !isOverdraft) {
+                    const instAmount = Number((totalVal / totalInst).toFixed(2));
+                    // Parse correto da data base para evitar desvios de fuso horário
+                    const baseDate = new Date(date + 'T12:00:00');
+
+                    for (let i = 0; i < totalInst; i++) {
+                        const instDate = new Date(baseDate);
+                        instDate.setMonth(baseDate.getMonth() + i);
+                        const dateStr = instDate.toISOString().split('T')[0];
+
+                        // Ajusta centavo de arredondamento na última parcela
+                        const currentAmount = i === totalInst - 1 
+                            ? Number((totalVal - (instAmount * (totalInst - 1))).toFixed(2))
+                            : instAmount;
+
+                        const displayDesc = `${description} (${i + 1}/${totalInst})`;
+
+                        await api.createCreditTransaction({
+                            cardId: selectedCardId,
+                            description: displayDesc,
+                            amount: currentAmount,
+                            installments: i + 1, 
+                            totalInstallments: totalInst,
+                            date: dateStr,
+                            category: category || 'Cartão de Crédito',
+                            isOverdraft: false,
+                            status: 'PENDING'
+                        }, token);
+                    }
+                } else {
+                    // Sem parcelamento ou é cheque especial
+                    await api.createCreditTransaction({
+                        cardId: isOverdraft ? 'overdraft' : selectedCardId,
+                        description,
+                        amount: totalVal,
+                        installments: 1, 
+                        totalInstallments: 1,
+                        date,
+                        category: category || (isOverdraft ? 'Cheque Especial' : 'Cartão de Crédito'),
+                        isOverdraft,
+                        status: 'PENDING'
+                    }, token);
+                }
+            }
             
             setIsTransactionModalOpen(false);
+            setEditingTransactionId(null);
             setDescription('');
             setAmount('');
             setInstallments('1');
@@ -208,7 +312,7 @@ const Credits: React.FC<CreditsProps> = ({
                         <Plus size={18} /> {t('newCard')}
                     </button>
                     <button 
-                        onClick={() => setIsTransactionModalOpen(true)}
+                        onClick={handleOpenNewTransaction}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 text-sm"
                     >
                         <Plus size={18} /> {t('newCreditExpense')}
@@ -327,7 +431,7 @@ const Credits: React.FC<CreditsProps> = ({
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('description')}</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('category')}</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('installments')}</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('date')}</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('paymentDate')}</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">{t('value')}</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest"></th>
                             </tr>
@@ -372,6 +476,13 @@ const Credits: React.FC<CreditsProps> = ({
                                                     {t('paid')}
                                                 </div>
                                             )}
+                                            <button 
+                                                onClick={() => handleOpenEditTransaction(tx)} 
+                                                className="text-gray-300 hover:text-blue-500 transition-colors p-1"
+                                                title={language === 'pt-BR' ? 'Editar lançamento' : 'Edit transaction'}
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
                                             <button onClick={() => handleDeleteTransaction(tx.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1">
                                                 <Trash2 size={16} />
                                             </button>
@@ -454,7 +565,11 @@ const Credits: React.FC<CreditsProps> = ({
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsTransactionModalOpen(false)}></div>
                     <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6">{t('newCreditExpense')}</h2>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6">
+                            {editingTransactionId 
+                                ? (language === 'pt-BR' ? 'Editar Lançamento de Crédito' : 'Edit Credit Expense') 
+                                : t('newCreditExpense')}
+                        </h2>
                         <div className="space-y-4">
                             <div className="flex gap-2 p-1 bg-gray-50 dark:bg-slate-900 rounded-xl mb-4">
                                 <button 
@@ -476,7 +591,7 @@ const Credits: React.FC<CreditsProps> = ({
                                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">{t('creditCards')}</label>
                                     <select 
                                         value={selectedCardId} 
-                                        onChange={e => setSelectedCardId(e.target.value)}
+                                        onChange={e => handleCardSelection(e.target.value)}
                                         className="w-full px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
                                     >
                                         <option value="">Selecione um cartão</option>
@@ -534,7 +649,7 @@ const Credits: React.FC<CreditsProps> = ({
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">{t('date')}</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">{t('paymentDate')}</label>
                                 <input 
                                     type="date" 
                                     value={date} 

@@ -352,7 +352,18 @@ const App: React.FC = () => {
                 }} 
                 language={language} 
             />}
-            {activePage === 'Agenda' && <Agenda tasks={tasks} onAddTask={async (t) => { await api.createCalendarEvent(t, token); }} onToggleTask={async (id, d) => { await api.toggleCalendarEvent(id, d, token); }} onDeleteTask={async (id) => { await api.deleteCalendarEvent(id, token); }} language={language} />}
+            {activePage === 'Agenda' && (
+                <Agenda 
+                    tasks={tasks} 
+                    subscriptions={subscriptions}
+                    creditCards={creditCards}
+                    creditTransactions={creditTransactions}
+                    onAddTask={async (t) => { await api.createCalendarEvent(t, token); }} 
+                    onToggleTask={async (id, d) => { await api.toggleCalendarEvent(id, d, token); }} 
+                    onDeleteTask={async (id) => { await api.deleteCalendarEvent(id, token); }} 
+                    language={language} 
+                />
+            )}
             {activePage === 'Relatórios' && <Reports transactions={transactions} creditTransactions={creditTransactions} investments={investments} language={language} selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} />}
             {activePage === 'Insights' && <AIInsights transactions={transactions} investments={investments} creditCards={creditCards} creditTransactions={creditTransactions} currentUser={currentUser} aiConversation={aiConversation} token={token || ''} />}
             {activePage === 'Créditos' && <Credits creditCards={creditCards} creditTransactions={creditTransactions} language={language} selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} token={token || ''} currentUser={currentUser} />}
