@@ -298,6 +298,9 @@ const App: React.FC = () => {
             language={language} 
             onLanguageChange={setLanguage}
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            subscriptions={subscriptions}
+            creditCards={creditCards}
+            creditTransactions={creditTransactions}
         />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-6 lg:p-8 pb-28 md:pb-8 no-scrollbar max-w-full">

@@ -107,5 +107,7 @@ export interface User {
   role?: 'admin' | 'user';
   phoneVerified?: boolean;
   overdraftLimit?: number;
+  emailNotifications?: boolean;
+  emailNotificationsDaysAndBefore?: number; // e.g. 1, 2, 3 days before
   createdAt?: string;
 }

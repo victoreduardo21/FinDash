@@ -12,7 +12,7 @@ import { WhatsAppIcon } from '../components/icons/WhatsAppIcon';
 import { useTranslation } from '../translations';
 import { auth } from '../services/firebase';
 import { RecaptchaVerifier, linkWithPhoneNumber, PhoneAuthProvider, PhoneMultiFactorGenerator } from 'firebase/auth';
-import { CheckCircleIcon } from 'lucide-react';
+import { CheckCircleIcon, Mail, BellRing } from 'lucide-react';
 
 const ADMIN_EMAIL = 'eduardopontesdias@outlook.com'; 
 
@@ -38,6 +38,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
+
   const isAdmin = currentUser.email === ADMIN_EMAIL;
 
   useEffect(() => {

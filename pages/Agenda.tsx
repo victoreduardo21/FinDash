@@ -40,6 +40,29 @@ interface UnifiedEvent {
     originalId?: string;
 }
 
+const getInvoiceDueDate = (txDateStr: string, closingDay: number, dueDay: number): string => {
+    if (!txDateStr) return '';
+    const cleanDate = txDateStr.split('T')[0];
+    const parts = cleanDate.split('-');
+    if (parts.length !== 3) return txDateStr;
+    let year = parseInt(parts[0]);
+    let month = parseInt(parts[1]); // 1-indexed
+    const day = parseInt(parts[2]);
+
+    // Se o dia da compra for maior ou igual ao dia de fechamento, cai no vencimento do mes SEGUINTE
+    if (day >= closingDay) {
+        month += 1;
+        if (month > 12) {
+            month = 1;
+            year += 1;
+        }
+    }
+
+    const targetDay = String(dueDay).padStart(2, '0');
+    const targetMonth = String(month).padStart(2, '0');
+    return `${year}-${targetMonth}-${targetDay}`;
+};
+
 const Agenda: React.FC<AgendaProps> = ({ 
     tasks, 
     subscriptions = [], 
@@ -164,27 +187,29 @@ const Agenda: React.FC<AgendaProps> = ({
         creditCards.forEach(card => {
             // Find unpaid transactions on this card
             const activeCardTxs = creditTransactions.filter(tx => tx.cardId === card.id && tx.status !== 'PAID');
-            const totalDue = activeCardTxs.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-
-            let dayNum = card.dueDay;
-            if (dayNum < 1) dayNum = 1;
-            if (dayNum > 28) dayNum = 28;
-            const dayStr = String(dayNum).padStart(2, '0');
-            const eventDate = `${curYear}-${curMonth}-${dayStr}`;
-            const virtualKey = `card-${card.id}-${curYear}-${curMonth}`;
             
-            // Fatura is "done" if either checked or zero outstanding
-            const isDone = checkedVirtuals.includes(virtualKey) || totalDue <= 0;
+            // Map each active transaction to its correct physical invoice due date
+            const dueDatesMap: Record<string, number> = {};
+            activeCardTxs.forEach(tx => {
+                const calculatedDueDate = getInvoiceDueDate(tx.date, card.closingDay || 10, card.dueDay || 15);
+                dueDatesMap[calculatedDueDate] = (dueDatesMap[calculatedDueDate] || 0) + tx.amount;
+            });
 
-            list.push({
-                id: virtualKey,
-                type: 'creditCard',
-                description: `${language === 'pt-BR' ? 'Fatura Cartão ' : 'Invoiced '}${card.name}`,
-                date: eventDate,
-                done: isDone,
-                amount: totalDue,
-                currency: card.currency,
-                originalId: card.id
+            Object.entries(dueDatesMap).forEach(([eventDate, totalDue]) => {
+                const [y, m] = eventDate.split('-');
+                const virtualKey = `card-${card.id}-${y}-${m}`;
+                const isDone = checkedVirtuals.includes(virtualKey) || totalDue <= 0;
+
+                list.push({
+                    id: virtualKey,
+                    type: 'creditCard',
+                    description: `${language === 'pt-BR' ? 'Fatura Cartão ' : 'Invoiced '}${card.name}`,
+                    date: eventDate,
+                    done: isDone,
+                    amount: totalDue,
+                    currency: card.currency,
+                    originalId: card.id
+                });
             });
         });
 
@@ -257,26 +282,30 @@ const Agenda: React.FC<AgendaProps> = ({
 
         creditCards.forEach(card => {
             const activeCardTxs = creditTransactions.filter(tx => tx.cardId === card.id && tx.status !== 'PAID');
-            const totalDue = activeCardTxs.reduce((sum, tx) => sum + (tx.amount || 0), 0);
             
-            let dayNum = card.dueDay;
-            if (dayNum < 1) dayNum = 1;
-            if (dayNum > 28) dayNum = 28;
-            const dayStr = String(dayNum).padStart(2, '0');
-            const eventDate = `${curYear}-${curMonth}-${dayStr}`;
-            const virtualKey = `card-${card.id}-${curYear}-${curMonth}`;
+            // Map each active transaction to its correct physical invoice due date
+            const dueDatesMap: Record<string, number> = {};
+            activeCardTxs.forEach(tx => {
+                const calculatedDueDate = getInvoiceDueDate(tx.date, card.closingDay || 10, card.dueDay || 15);
+                dueDatesMap[calculatedDueDate] = (dueDatesMap[calculatedDueDate] || 0) + tx.amount;
+            });
 
-            if (totalDue > 0 && !checkedVirtuals.includes(virtualKey)) {
-                fullList.push({
-                    id: virtualKey,
-                    type: 'creditCard',
-                    description: `${language === 'pt-BR' ? 'Fatura Cartão ' : 'Invoiced '}${card.name}`,
-                    date: eventDate,
-                    done: false,
-                    amount: totalDue,
-                    currency: card.currency
-                });
-            }
+            Object.entries(dueDatesMap).forEach(([eventDate, totalDue]) => {
+                const [y, m] = eventDate.split('-');
+                const virtualKey = `card-${card.id}-${y}-${m}`;
+
+                if (totalDue > 0 && !checkedVirtuals.includes(virtualKey)) {
+                    fullList.push({
+                        id: virtualKey,
+                        type: 'creditCard',
+                        description: `${language === 'pt-BR' ? 'Fatura Cartão ' : 'Invoiced '}${card.name}`,
+                        date: eventDate,
+                        done: false,
+                        amount: totalDue,
+                        currency: card.currency
+                    });
+                }
+            });
         });
 
         creditTransactions.forEach(tx => {

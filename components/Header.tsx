@@ -4,7 +4,7 @@ import { SearchIcon } from './icons/SearchIcon';
 import { BellIcon } from './icons/BellIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { MenuIcon } from './icons/MenuIcon';
-import { User, CalendarEvent, Page, Language } from '../types';
+import { User, CalendarEvent, Page, Language, Subscription, CreditCard, CreditTransaction } from '../types';
 import { ClockIcon } from './icons/ClockIcon';
 
 interface HeaderProps {
@@ -17,9 +17,48 @@ interface HeaderProps {
     language: Language;
     onLanguageChange: (lang: Language) => void;
     toggleSidebar: () => void;
+    subscriptions?: Subscription[];
+    creditCards?: CreditCard[];
+    creditTransactions?: CreditTransaction[];
 }
 
-const Header: React.FC<HeaderProps> = ({ onLogout, onNewTransaction, currentUser, setActivePage, onSearch, tasks, language, onLanguageChange, toggleSidebar }) => {
+const getInvoiceDueDate = (txDateStr: string, closingDay: number, dueDay: number): string => {
+    if (!txDateStr) return '';
+    const cleanDate = txDateStr.split('T')[0];
+    const parts = cleanDate.split('-');
+    if (parts.length !== 3) return txDateStr;
+    let year = parseInt(parts[0]);
+    let month = parseInt(parts[1]); // 1-indexed
+    const day = parseInt(parts[2]);
+
+    // Se o dia da compra for maior ou igual ao dia de fechamento, cai no vencimento do mes SEGUINTE
+    if (day >= closingDay) {
+        month += 1;
+        if (month > 12) {
+            month = 1;
+            year += 1;
+        }
+    }
+
+    const targetDay = String(dueDay).padStart(2, '0');
+    const targetMonth = String(month).padStart(2, '0');
+    return `${year}-${targetMonth}-${targetDay}`;
+};
+
+const Header: React.FC<HeaderProps> = ({ 
+    onLogout, 
+    onNewTransaction, 
+    currentUser, 
+    setActivePage, 
+    onSearch, 
+    tasks, 
+    language, 
+    onLanguageChange, 
+    toggleSidebar,
+    subscriptions = [],
+    creditCards = [],
+    creditTransactions = []
+}) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -39,11 +78,113 @@ const Header: React.FC<HeaderProps> = ({ onLogout, onNewTransaction, currentUser
   }, []);
   
   const notifications = useMemo(() => {
+      const list: { id: string; description: string; date: string; type: string }[] = [];
       const d = new Date();
       const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const pending = (tasks || []).filter(task => !task.done && task.date <= todayStr);
-      return pending.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [tasks]);
+      
+      // 1. Manual events
+      (tasks || []).forEach(task => {
+          if (!task.done && task.date <= todayStr) {
+              list.push({
+                  id: `manual-${task.id}`,
+                  type: 'manual',
+                  description: task.description,
+                  date: task.date.slice(0, 10)
+              });
+          }
+      });
+
+      const curYear = d.getFullYear();
+      const curMonth = String(d.getMonth() + 1).padStart(2, '0');
+
+      // Helper to calculate days diff
+      const getDaysDifference = (dateStr: string) => {
+          if (!dateStr) return 999;
+          const cleanDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+          const parts = cleanDate.split('-');
+          if (parts.length !== 3) return 999;
+          const [y, m, dNum] = parts.map(Number);
+          const targetDate = new Date(y, m - 1, dNum);
+          targetDate.setHours(0, 0, 0, 0);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const diffTime = targetDate.getTime() - today.getTime();
+          return Math.round(diffTime / (1000 * 60 * 60 * 24));
+      };
+
+      // Retrieve checked virtuals
+      let checkedVirtuals: string[] = [];
+      try {
+          const saved = localStorage.getItem('gts_agenda_checked_virtuals');
+          if (saved) checkedVirtuals = JSON.parse(saved);
+      } catch {}
+
+      // 2. Active subscriptions due within next 3 days of current month
+      (subscriptions || []).forEach(sub => {
+          if (sub.status === 'ACTIVE') {
+              let dayNum = sub.dueDay;
+              if (dayNum < 1) dayNum = 1;
+              if (dayNum > 28) dayNum = 28;
+              const dayStr = String(dayNum).padStart(2, '0');
+              const eventDate = `${curYear}-${curMonth}-${dayStr}`;
+              const virtualKey = `sub-${sub.id}-${curYear}-${curMonth}`;
+              if (!checkedVirtuals.includes(virtualKey)) {
+                  const diff = getDaysDifference(eventDate);
+                  if (diff <= 3) {
+                      list.push({
+                          id: virtualKey,
+                          type: 'subscription',
+                          description: `${sub.description}`,
+                          date: eventDate
+                      });
+                  }
+              }
+          }
+      });
+
+      // 3. Credit Card bills due within next 3 days of current month
+      (creditCards || []).forEach(card => {
+          const activeCardTxs = (creditTransactions || []).filter(tx => tx.cardId === card.id && tx.status !== 'PAID');
+          
+          // Map each active transaction to its correct physical invoice due date
+          const dueDatesMap: Record<string, number> = {};
+          activeCardTxs.forEach(tx => {
+              const calculatedDueDate = getInvoiceDueDate(tx.date, card.closingDay || 10, card.dueDay || 15);
+              dueDatesMap[calculatedDueDate] = (dueDatesMap[calculatedDueDate] || 0) + tx.amount;
+          });
+
+          Object.entries(dueDatesMap).forEach(([eventDate, totalDue]) => {
+              const [y, m] = eventDate.split('-');
+              const virtualKey = `card-${card.id}-${y}-${m}`;
+
+              if (totalDue > 0 && !checkedVirtuals.includes(virtualKey)) {
+                  const diff = getDaysDifference(eventDate);
+                  if (diff <= 3) {
+                      list.push({
+                          id: virtualKey,
+                          type: 'creditCard',
+                          description: `${language === 'pt-BR' ? 'Fatura Vencendo ' : 'Invoice Due '}${card.name}`,
+                          date: eventDate
+                      });
+                  }
+              }
+          });
+      });
+
+      // 4. Overdrafts
+      (creditTransactions || []).forEach(tx => {
+          if (tx.isOverdraft && tx.status !== 'PAID') {
+              list.push({
+                  id: `overdraft-${tx.id}`,
+                  type: 'overdraft',
+                  description: `${language === 'pt-BR' ? 'Cheque Especial: ' : 'Overdraft: '}${tx.description}`,
+                  date: tx.date.slice(0, 10)
+              });
+          }
+      });
+
+      return list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [tasks, subscriptions, creditCards, creditTransactions, language]);
 
   const userInitials = useMemo(() => {
       const name = currentUser?.name || 'U';
