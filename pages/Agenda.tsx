@@ -222,7 +222,7 @@ const Agenda: React.FC<AgendaProps> = ({
                     type: 'overdraft',
                     description: `${language === 'pt-BR' ? 'Cheque Especial Pendente: ' : 'Overdraft Pending: '}${tx.description}`,
                     date: tx.date.slice(0, 10),
-                    done: false, // Outstanding cheque especial is never "done" until paid in Créditos
+                    done: checkedVirtuals.includes(virtualKey),
                     amount: tx.amount,
                     currency: 'BRL',
                     originalId: tx.id
@@ -310,15 +310,18 @@ const Agenda: React.FC<AgendaProps> = ({
 
         creditTransactions.forEach(tx => {
             if (tx.isOverdraft && tx.status !== 'PAID') {
-                fullList.push({
-                    id: `overdraft-${tx.id}`,
-                    type: 'overdraft',
-                    description: `${language === 'pt-BR' ? 'Cheque Especial: ' : 'Overdraft: '}${tx.description}`,
-                    date: tx.date.slice(0, 10),
-                    done: false,
-                    amount: tx.amount,
-                    currency: 'BRL'
-                });
+                const virtualKey = `overdraft-${tx.id}`;
+                if (!checkedVirtuals.includes(virtualKey)) {
+                    fullList.push({
+                        id: virtualKey,
+                        type: 'overdraft',
+                        description: `${language === 'pt-BR' ? 'Cheque Especial: ' : 'Overdraft: '}${tx.description}`,
+                        date: tx.date.slice(0, 10),
+                        done: false,
+                        amount: tx.amount,
+                        currency: 'BRL'
+                    });
+                }
             }
         });
 

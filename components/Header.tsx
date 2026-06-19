@@ -174,12 +174,15 @@ const Header: React.FC<HeaderProps> = ({
       // 4. Overdrafts
       (creditTransactions || []).forEach(tx => {
           if (tx.isOverdraft && tx.status !== 'PAID') {
-              list.push({
-                  id: `overdraft-${tx.id}`,
-                  type: 'overdraft',
-                  description: `${language === 'pt-BR' ? 'Cheque Especial: ' : 'Overdraft: '}${tx.description}`,
-                  date: tx.date.slice(0, 10)
-              });
+              const virtualKey = `overdraft-${tx.id}`;
+              if (!checkedVirtuals.includes(virtualKey)) {
+                  list.push({
+                      id: virtualKey,
+                      type: 'overdraft',
+                      description: `${language === 'pt-BR' ? 'Cheque Especial: ' : 'Overdraft: '}${tx.description}`,
+                      date: tx.date.slice(0, 10)
+                  });
+              }
           }
       });
 
