@@ -146,22 +146,6 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
         alert("O telefone é obrigatório.");
         return;
     }
-    if (!formData.cnpj?.trim()) {
-        alert("O CNPJ é obrigatório.");
-        return;
-    }
-    if (!formData.companyName?.trim()) {
-        alert("A Razão Social / Nome da Empresa é obrigatória.");
-        return;
-    }
-    if (!formData.stateRegistration?.trim()) {
-        alert("A Inscrição Estadual (IE) é obrigatória.");
-        return;
-    }
-    if (!formData.municipalRegistration?.trim()) {
-        alert("A Inscrição Municipal (IM) é obrigatória.");
-        return;
-    }
     if (!formData.cep?.trim()) {
         alert("O CEP é obrigatório.");
         return;
@@ -288,59 +272,37 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                                 <input type="text" placeholder="000.000.000-00" value={isEditing ? formData.cpf : (currentUser.cpf || '-')} onChange={(e) => setFormData({...formData, cpf: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CNPJ <span className="text-red-500 font-bold">*</span></label>
-                                <input type="text" placeholder="00.000.000/0000-00" value={isEditing ? formData.cnpj : (currentUser.cnpj || '-')} onChange={(e) => setFormData({...formData, cnpj: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
-                            </div>
-                        </div>
-
-                        {(formData.cnpj || isEditing) && (
-                            <div className="space-y-4 pt-2">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Razão Social / Nome da Empresa <span className="text-red-500 font-bold">*</span></label>
-                                    <input type="text" placeholder="Razão Social completa para NF" value={isEditing ? formData.companyName : (currentUser.companyName || '-')} onChange={(e) => setFormData({...formData, companyName: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Estadual (IE) <span className="text-red-500 font-bold">*</span></label>
-                                        <input type="text" placeholder="Isento ou Número IE" value={isEditing ? formData.stateRegistration : (currentUser.stateRegistration || '-')} onChange={(e) => setFormData({...formData, stateRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phone')} <span className="text-red-500 font-bold">*</span></label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-grow">
+                                        <input 
+                                            type="text" 
+                                            placeholder="+5511999999999"
+                                            value={isEditing ? formData.phone : (currentUser.phone || '-')} 
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                                            disabled={!isEditing} 
+                                            className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white border-blue-500 dark:bg-gray-800 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} 
+                                        />
+                                        {currentUser.phoneVerified && !isEditing && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 flex items-center gap-1">
+                                                <CheckCircleIcon size={14} />
+                                                <span className="text-[9px] font-bold">{t('phoneVerified')}</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Municipal (IM) <span className="text-red-500 font-bold">*</span></label>
-                                        <input type="text" placeholder="Número IM" value={isEditing ? formData.municipalRegistration : (currentUser.municipalRegistration || '-')} onChange={(e) => setFormData({...formData, municipalRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phone')} <span className="text-red-500 font-bold">*</span></label>
-                            <div className="flex gap-2">
-                                <div className="relative flex-grow">
-                                    <input 
-                                        type="text" 
-                                        placeholder="+5511999999999"
-                                        value={isEditing ? formData.phone : (currentUser.phone || '-')} 
-                                        onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                                        disabled={!isEditing} 
-                                        className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white border-blue-500 dark:bg-gray-800 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} 
-                                    />
-                                    {currentUser.phoneVerified && !isEditing && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 flex items-center gap-1">
-                                            <CheckCircleIcon size={14} />
-                                            <span className="text-[9px] font-bold">{t('phoneVerified')}</span>
-                                        </div>
+                                    {isEditing && !currentUser.phoneVerified && (
+                                        <button 
+                                            type="button"
+                                            onClick={handleSendCode}
+                                            disabled={isVerifying}
+                                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+                                        >
+                                            {t('verifyPhone')}
+                                        </button>
                                     )}
                                 </div>
-                                {isEditing && !currentUser.phoneVerified && (
-                                    <button 
-                                        onClick={handleSendCode}
-                                        disabled={isVerifying}
-                                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50"
-                                    >
-                                        {t('verifyPhone')}
-                                    </button>
-                                )}
                             </div>
+                        </div>
                             
                             {verificationId && (
                                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
@@ -366,7 +328,6 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                                 </div>
                             )}
                         </div>
-                    </div>
 
                     <div className="space-y-4 pt-4 border-t dark:border-gray-700">
                         <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">2. Endereço Comercial ou Residencial</h5>
