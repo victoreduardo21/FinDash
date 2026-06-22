@@ -372,7 +372,7 @@ const App: React.FC = () => {
             {activePage === 'Créditos' && <Credits creditCards={creditCards} creditTransactions={creditTransactions} language={language} selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} token={token || ''} currentUser={currentUser} />}
             {activePage === 'Assinaturas' && <Subscriptions subscriptions={subscriptions} language={language} selectedCurrency={selectedCurrency} token={token || ''} />}
             {activePage === 'Configurações' && currentUser && <Settings theme={theme} setTheme={setTheme} currentUser={currentUser} onUpdatePassword={async (c, n) => { await api.updatePassword({currentPassword: c, newPassword: n}, token); }} onUpdateAvatar={async (a) => { await api.updateAvatar({avatar: a}, token); }} onCreateUser={async (u) => { const r = await api.createUser(u); return r; }} language={language} onLanguageChange={setLanguage} />}
-            {activePage === 'Admin' && currentUser?.email === 'eduardopontesdias@outlook.com' && <Admin />}
+            {activePage === 'Admin' && (currentUser?.role === 'admin' || currentUser?.email === 'eduardopontesdias@outlook.com' || currentUser?.email === 'gtsglobaltech01@gmail.com') && <Admin />}
         </main>
       </div>
 

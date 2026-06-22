@@ -33,16 +33,50 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
   const [clients, setClients] = useState<User[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: currentUser.name, phone: currentUser.phone || '', cpf: currentUser.cpf || '' });
+  const [formData, setFormData] = useState({
+    name: currentUser.name,
+    phone: currentUser.phone || '',
+    cpf: currentUser.cpf || '',
+    cnpj: currentUser.cnpj || '',
+    companyName: currentUser.companyName || '',
+    stateRegistration: currentUser.stateRegistration || '',
+    municipalRegistration: currentUser.municipalRegistration || '',
+    cep: currentUser.cep || '',
+    street: currentUser.street || '',
+    number: currentUser.number || '',
+    complement: currentUser.complement || '',
+    neighborhood: currentUser.neighborhood || '',
+    city: currentUser.city || '',
+    state: currentUser.state || '',
+    onboardingObjective: currentUser.onboardingObjective || '',
+    onboardingReason: currentUser.onboardingReason || '',
+  });
   const [verificationId, setVerificationId] = useState<any>(null);
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
 
-  const isAdmin = currentUser.email === ADMIN_EMAIL;
+  const isAdmin = currentUser.role === 'admin' || currentUser.email === ADMIN_EMAIL || currentUser.email === 'gtsglobaltech01@gmail.com';
 
   useEffect(() => {
-    setFormData({ name: currentUser.name, phone: currentUser.phone || '', cpf: currentUser.cpf || '' });
+    setFormData({
+      name: currentUser.name,
+      phone: currentUser.phone || '',
+      cpf: currentUser.cpf || '',
+      cnpj: currentUser.cnpj || '',
+      companyName: currentUser.companyName || '',
+      stateRegistration: currentUser.stateRegistration || '',
+      municipalRegistration: currentUser.municipalRegistration || '',
+      cep: currentUser.cep || '',
+      street: currentUser.street || '',
+      number: currentUser.number || '',
+      complement: currentUser.complement || '',
+      neighborhood: currentUser.neighborhood || '',
+      city: currentUser.city || '',
+      state: currentUser.state || '',
+      onboardingObjective: currentUser.onboardingObjective || '',
+      onboardingReason: currentUser.onboardingReason || '',
+    });
   }, [currentUser]);
 
   const setupRecaptcha = () => {
@@ -99,6 +133,44 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
   };
 
   const handleSaveProfile = async () => {
+    // Validação de campos obrigatórios do endereço e cadastro básico
+    if (!formData.name?.trim()) {
+        alert("O nome é obrigatório.");
+        return;
+    }
+    if (!formData.cpf?.trim()) {
+        alert("O CPF é obrigatório.");
+        return;
+    }
+    if (!formData.phone?.trim()) {
+        alert("O telefone é obrigatório.");
+        return;
+    }
+    if (!formData.cep?.trim()) {
+        alert("O CEP é obrigatório.");
+        return;
+    }
+    if (!formData.street?.trim()) {
+        alert("O Logradouro / Rua é obrigatório.");
+        return;
+    }
+    if (!formData.number?.trim()) {
+        alert("O Número é obrigatório.");
+        return;
+    }
+    if (!formData.neighborhood?.trim()) {
+        alert("O Bairro é obrigatório.");
+        return;
+    }
+    if (!formData.city?.trim()) {
+        alert("A Cidade é obrigatória.");
+        return;
+    }
+    if (!formData.state?.trim()) {
+        alert("O Estado (UF) é obrigatório.");
+        return;
+    }
+
     try {
         await api.updateUser(auth.currentUser!.uid, formData);
         setIsEditing(false);
@@ -160,82 +232,206 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
           <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
             <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-6 border-b pb-4 dark:border-gray-700">{t('profile')}</h4>
             <div id="recaptcha-container"></div>
-            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8">
-                <div className="h-28 w-28 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-4xl font-bold text-blue-700 dark:text-blue-200 shadow-lg border-4 border-white dark:border-gray-600">{userInitials}</div>
-                <div className="flex-grow w-full space-y-5">
+            <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-8">
+                <div className="h-28 w-28 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-4xl font-bold text-blue-700 dark:text-blue-200 shadow-lg border-4 border-white dark:border-gray-600 sticky top-4">{userInitials}</div>
+                <div className="flex-1 min-w-0 space-y-6">
                     <div className="flex justify-end">
                         <button 
                             onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} 
-                            className="text-xs font-bold px-4 py-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 dark:bg-blue-900/30 dark:border-blue-800"
+                            className="text-xs font-bold px-4 py-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 dark:bg-blue-900/30 dark:border-blue-800 hover:bg-blue-100 transition-colors"
                         >
                             {isEditing ? t('save') : t('editProfile')}
                         </button>
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('name')}</label>
-                        <input type="text" value={isEditing ? formData.name : currentUser.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2.5 rounded-lg shadow-sm border ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label><input type="email" value={currentUser.email} disabled className="block w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-sm text-gray-400" /></div>
-                        <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('cpf')}</label><input type="text" value={isEditing ? formData.cpf : (currentUser.cpf || '-')} onChange={(e) => setFormData({...formData, cpf: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2.5 border rounded-lg shadow-sm ${isEditing ? 'bg-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`} /></div>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('phone')}</label>
-                        <div className="flex gap-2">
-                            <div className="relative flex-grow">
-                                <input 
-                                    type="text" 
-                                    placeholder="+5511999999999"
-                                    value={isEditing ? formData.phone : (currentUser.phone || '-')} 
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                                    disabled={!isEditing} 
-                                    className={`block w-full px-4 py-2.5 border rounded-lg shadow-sm ${isEditing ? 'bg-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`} 
-                                />
-                                {currentUser.phoneVerified && !isEditing && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 flex items-center gap-1">
-                                        <CheckCircleIcon size={16} />
-                                        <span className="text-[10px] font-bold">{t('phoneVerified')}</span>
-                                    </div>
-                                )}
-                            </div>
-                            {isEditing && !currentUser.phoneVerified && (
-                                <button 
-                                    onClick={handleSendCode}
-                                    disabled={isVerifying}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    {t('verifyPhone')}
-                                </button>
-                            )}
-                        </div>
+
+                    <div className="space-y-4">
+                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1. Identificação e Dados Fiscais (NF-e)</h5>
                         
-                        {verificationId && (
-                            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                                <p className="text-xs font-bold text-gray-600 dark:text-gray-400">{t('enterCode')}</p>
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        maxLength={6}
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        placeholder="123456"
-                                        className="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-700 text-center tracking-[1em] font-bold"
-                                    />
-                                    <button 
-                                        onClick={handleVerifyCode}
-                                        disabled={isVerifying}
-                                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold"
-                                    >
-                                        OK
-                                    </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('name')}</label>
+                                <input type="text" value={isEditing ? formData.name : currentUser.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 rounded-lg border text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                                <input type="email" value={currentUser.email} disabled className="block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg text-sm text-gray-400" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('cpf')}</label>
+                                <input type="text" placeholder="000.000.000-00" value={isEditing ? formData.cpf : (currentUser.cpf || '-')} onChange={(e) => setFormData({...formData, cpf: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CNPJ (Se aplicável)</label>
+                                <input type="text" placeholder="00.000.000/0000-00" value={isEditing ? formData.cnpj : (currentUser.cnpj || '-')} onChange={(e) => setFormData({...formData, cnpj: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                        </div>
+
+                        {(formData.cnpj || isEditing) && (
+                            <div className="space-y-4 pt-2">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Razão Social / Nome da Empresa</label>
+                                    <input type="text" placeholder="Razão Social completa para NF" value={isEditing ? formData.companyName : (currentUser.companyName || '-')} onChange={(e) => setFormData({...formData, companyName: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                                 </div>
-                                {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Estadual (IE)</label>
+                                        <input type="text" placeholder="Isento ou Número IE" value={isEditing ? formData.stateRegistration : (currentUser.stateRegistration || '-')} onChange={(e) => setFormData({...formData, stateRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Municipal (IM)</label>
+                                        <input type="text" placeholder="Opcional" value={isEditing ? formData.municipalRegistration : (currentUser.municipalRegistration || '-')} onChange={(e) => setFormData({...formData, municipalRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                                    </div>
+                                </div>
                             </div>
                         )}
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phone')}</label>
+                            <div className="flex gap-2">
+                                <div className="relative flex-grow">
+                                    <input 
+                                        type="text" 
+                                        placeholder="+5511999999999"
+                                        value={isEditing ? formData.phone : (currentUser.phone || '-')} 
+                                        onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                                        disabled={!isEditing} 
+                                        className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white border-blue-500 dark:bg-gray-800 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} 
+                                    />
+                                    {currentUser.phoneVerified && !isEditing && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 flex items-center gap-1">
+                                            <CheckCircleIcon size={14} />
+                                            <span className="text-[9px] font-bold">{t('phoneVerified')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {isEditing && !currentUser.phoneVerified && (
+                                    <button 
+                                        onClick={handleSendCode}
+                                        disabled={isVerifying}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                        {t('verifyPhone')}
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {verificationId && (
+                                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                                    <p className="text-xs font-bold text-gray-600 dark:text-gray-400">{t('enterCode')}</p>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            maxLength={6}
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            placeholder="123456"
+                                            className="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-700 text-center tracking-[1em] font-bold"
+                                        />
+                                        <button 
+                                            onClick={handleVerifyCode}
+                                            disabled={isVerifying}
+                                            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold"
+                                        >
+                                            OK
+                                        </button>
+                                    </div>
+                                    {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <button onClick={() => setIsPasswordModalOpen(true)} className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700">{t('changePassword')}</button>
+                    <div className="space-y-4 pt-4 border-t dark:border-gray-700">
+                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">2. Endereço Comercial ou Residencial (NF-e)</h5>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CEP</label>
+                                <input type="text" placeholder="00000-000" value={isEditing ? formData.cep : (currentUser.cep || '-')} onChange={(e) => setFormData({...formData, cep: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Logradouro / Rua</label>
+                                <input type="text" placeholder="Av / Rua / Beco" value={isEditing ? formData.street : (currentUser.street || '-')} onChange={(e) => setFormData({...formData, street: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Número</label>
+                                <input type="text" placeholder="123" value={isEditing ? formData.number : (currentUser.number || '-')} onChange={(e) => setFormData({...formData, number: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Complemento</label>
+                                <input type="text" placeholder="Apto 4B" value={isEditing ? formData.complement : (currentUser.complement || '-')} onChange={(e) => setFormData({...formData, complement: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bairro</label>
+                                <input type="text" placeholder="Centro" value={isEditing ? formData.neighborhood : (currentUser.neighborhood || '-')} onChange={(e) => setFormData({...formData, neighborhood: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="md:col-span-3">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cidade</label>
+                                <input type="text" placeholder="São Paulo" value={isEditing ? formData.city : (currentUser.city || '-')} onChange={(e) => setFormData({...formData, city: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                            <div className="md:col-span-1">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">UF / Estado</label>
+                                <input type="text" maxLength={2} placeholder="SP" value={isEditing ? formData.state : (currentUser.state || '-')} onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})} disabled={!isEditing} className={`block w-full text-center px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t dark:border-gray-700">
+                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">3. Experiência e Objetivos de Uso</h5>
+                        
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Qual o seu principal objetivo com o Money Dashs?</label>
+                            {isEditing ? (
+                                <select 
+                                    value={formData.onboardingObjective} 
+                                    onChange={(e) => setFormData({...formData, onboardingObjective: e.target.value})}
+                                    className="block w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white"
+                                >
+                                    <option value="">Selecione o objetivo</option>
+                                    <option value="organizar_Financas">Organizar minhas finanças diárias com clareza</option>
+                                    <option value="controlar_Gastos">Controlar gastos excessivos e economizar todo mês</option>
+                                    <option value="planejar_Futuro">Planejar investimentos de longo prazo e aposentadoria</option>
+                                    <option value="gerenciar_Empresa">Gerenciar finanças pessoais e empresariais juntas</option>
+                                </select>
+                            ) : (
+                                <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border dark:border-gray-600 font-medium">
+                                    {currentUser.onboardingObjective === 'organizar_Financas' ? 'Organizar minhas finanças diárias com clareza' :
+                                     currentUser.onboardingObjective === 'controlar_Gastos' ? 'Controlar gastos excessivos e economizar todo mês' :
+                                     currentUser.onboardingObjective === 'planejar_Futuro' ? 'Planejar investimentos de longo prazo e aposentadoria' :
+                                     currentUser.onboardingObjective === 'gerenciar_Empresa' ? 'Gerenciar finanças pessoais e empresariais juntas' :
+                                     currentUser.onboardingObjective || 'Não informado'}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">O que você busca em nosso sistema para o seu dia-a-dia?</label>
+                            {isEditing ? (
+                                <textarea 
+                                    rows={3} 
+                                    placeholder="Ex: Busco centralizar todas as minhas despesas em cartões, acompanhar o vencimento do cheque especial e ver insights sobre gastos." 
+                                    value={formData.onboardingReason} 
+                                    onChange={(e) => setFormData({...formData, onboardingReason: e.target.value})} 
+                                    className="block w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white placeholder:text-gray-400 focus:ring-1 focus:ring-blue-500 outline-none"
+                                />
+                            ) : (
+                                <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border dark:border-gray-600 whitespace-pre-wrap font-medium">
+                                    {currentUser.onboardingReason || 'Não informado'}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <button onClick={() => setIsPasswordModalOpen(true)} className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 pt-2 block">{t('changePassword')}</button>
                 </div>
             </div>
           </div>

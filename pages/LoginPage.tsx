@@ -39,6 +39,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  // Onboarding states
+  const [onboardingObjective, setOnboardingObjective] = useState('');
+  const [onboardingReason, setOnboardingReason] = useState('');
+  const [regStep, setRegStep] = useState(1);
   
   // Phone Verification States
   const [showVerification, setShowVerification] = useState(false);
@@ -47,7 +52,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
   const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
 
-  useEffect(() => { setIsLoginMode(initialMode === 'login'); }, [initialMode]);
+  useEffect(() => { 
+    setIsLoginMode(initialMode === 'login'); 
+    setRegStep(1);
+    setOnboardingObjective('');
+    setOnboardingReason('');
+  }, [initialMode, isLoginMode]);
 
   const setupRecaptcha = () => {
     if ((window as any).recaptchaVerifier) return;
@@ -120,11 +130,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
 
     try {
         if (isLoginMode) {
+            setIsLoading(true);
             const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
             const user = userCredential.user;
             const userData = await api.getMe(user.uid);
@@ -145,16 +155,38 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
                 setError('Perfil não encontrado no banco de dados.');
             }
         } else {
-            if (password.length < 6) {
-                setIsLoading(false);
-                return setError("A senha deve ter no mínimo 6 caracteres.");
+            if (regStep === 1) {
+                if (password.length < 6) {
+                    return setError("A senha deve ter no mínimo 6 caracteres.");
+                }
+
+                if (!phone.startsWith('+')) {
+                    return setError("O telefone deve conter o código do país (ex: +55...)");
+                }
+
+                if (!name.trim()) {
+                    return setError("Nome completo é obrigatório.");
+                }
+
+                if (!cpf.trim()) {
+                    return setError("CPF é obrigatório.");
+                }
+
+                // Field validated, transfer to survey form step 2
+                setRegStep(2);
+                return;
             }
 
-            if (!phone.startsWith('+')) {
-                setIsLoading(false);
-                return setError("O telefone deve conter o código do país (ex: +55...)");
+            // Step 2 validations
+            if (!onboardingObjective) {
+                return setError("Qual o seu principal objetivo com o Money Dashs?");
             }
-            
+
+            if (!onboardingReason.trim()) {
+                return setError("Por favor, relate o que você busca no sistema.");
+            }
+
+            setIsLoading(true);
             const userCredential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
             const user = userCredential.user;
             setRegisteredUserId(user.uid);
@@ -166,6 +198,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
                 email: email.trim().toLowerCase(),
                 phone,
                 cpf,
+                onboardingObjective,
+                onboardingReason,
                 plan: selectedPlan as Plan,
                 billingCycle: selectedBillingCycle as BillingCycle,
                 subscriptionStatus: 'ACTIVE',
@@ -309,7 +343,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
                                     Money Dashs
                                 </h1>
                             </div>
-            {!isLoginMode && (
+            {!isLoginMode && regStep === 1 && (
                 <div className="space-y-4">
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Nome Completo</label>
@@ -328,29 +362,78 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
                 </div>
             )}
                             
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">E-mail</label>
-                                <input 
-                                    type="email" 
-                                    value={email} 
-                                    onChange={e => setEmail(e.target.value)} 
-                                    required 
-                                    placeholder="exemplo@email.com" 
-                                    className={inputClasses} 
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Senha</label>
-                                <input 
-                                    type="password" 
-                                    value={password} 
-                                    onChange={e => setPassword(e.target.value)} 
-                                    required 
-                                    placeholder="••••••••" 
-                                    className={inputClasses} 
-                                />
-                            </div>
+                            {(isLoginMode || (!isLoginMode && regStep === 1)) && (
+                                <>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">E-mail</label>
+                                        <input 
+                                            type="email" 
+                                            value={email} 
+                                            onChange={e => setEmail(e.target.value)} 
+                                            required 
+                                            placeholder="exemplo@email.com" 
+                                            className={inputClasses} 
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Senha</label>
+                                        <input 
+                                            type="password" 
+                                            value={password} 
+                                            onChange={e => setPassword(e.target.value)} 
+                                            required 
+                                            placeholder="••••••••" 
+                                            className={inputClasses} 
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {!isLoginMode && regStep === 2 && (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="flex items-center space-x-2 text-blue-600 font-bold text-xs bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
+                                        <span className="bg-blue-600 text-white px-2 py-0.5 rounded-full text-[10px]">Passo 2 de 2</span>
+                                        <span>Nos ajude a te conhecer melhor!</span>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Qual o seu principal objetivo com o Money Dashs?</label>
+                                        <select 
+                                            value={onboardingObjective} 
+                                            onChange={(e) => setOnboardingObjective(e.target.value)}
+                                            required
+                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm font-medium"
+                                        >
+                                            <option value="">Selecione o objetivo</option>
+                                            <option value="organizar_Financas">Organizar minhas finanças diárias com clareza</option>
+                                            <option value="controlar_Gastos">Controlar gastos excessivos e economizar todo mês</option>
+                                            <option value="planejar_Futuro">Planejar investimentos de longo prazo e aposentadoria</option>
+                                            <option value="gerenciar_Empresa">Gerenciar finanças pessoais e empresariais juntas</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">O que você busca em nosso sistema no seu dia-a-dia?</label>
+                                        <textarea 
+                                            rows={3}
+                                            value={onboardingReason}
+                                            onChange={(e) => setOnboardingReason(e.target.value)}
+                                            required
+                                            placeholder="Ex: Controlar gastos no cheque especial, emitir relatórios de despesas e lucros..."
+                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm font-medium resize-none"
+                                        />
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setRegStep(1)} 
+                                        className="text-xs text-blue-600 font-bold hover:underline py-1"
+                                    >
+                                        ← Voltar para dados básicos
+                                    </button>
+                                </div>
+                            )}
 
                             {error && (
                                 <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 text-center animate-shake">
@@ -359,7 +442,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
                             )}
 
                             <button type="submit" disabled={isLoading} className="w-full py-4 bg-[#020617] text-white rounded-xl font-bold hover:bg-black transition-all shadow-xl disabled:opacity-50 transform active:scale-95">
-                                {isLoading ? 'CARREGANDO...' : (isLoginMode ? 'ENTRAR' : 'CADASTRAR AGORA')}
+                                {isLoading ? 'CARREGANDO...' : (isLoginMode ? 'ENTRAR' : (regStep === 1 ? 'SEGUINTE: DEFINIR OBJETIVOS' : 'CADASTRAR AGORA'))}
                             </button>
 
                             {isLoginMode && (

@@ -99,6 +99,19 @@ export interface User {
   avatar?: string; // base64 encoded image
   phone?: string;
   cpf?: string;
+  cnpj?: string;
+  companyName?: string;
+  stateRegistration?: string;
+  municipalRegistration?: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  onboardingObjective?: string;
+  onboardingReason?: string;
   subscriptionStatus?: 'ACTIVE' | 'PENDING' | 'OVERDUE' | 'INACTIVE';
   plan: Plan;
   billingCycle?: BillingCycle;
