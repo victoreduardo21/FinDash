@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import TransactionsTable from '../components/TransactionsTable';
 import { PlusIcon } from '../components/icons/PlusIcon';
-import { PersonalTransaction, Currency, Language, TransactionType } from '../types';
+import { PersonalTransaction, Currency, Language, TransactionType, User } from '../types';
 import { useTranslation } from '../translations';
 import { 
   FileDown, 
@@ -24,6 +24,7 @@ interface TransactionsProps {
     language: Language;
     selectedCurrency: Currency;
     onCurrencyChange: (currency: Currency) => void;
+    currentUser?: User | null;
 }
 
 const CATEGORIES_PT = [
@@ -98,7 +99,8 @@ const Transactions: React.FC<TransactionsProps> = ({
   searchQuery, 
   language, 
   selectedCurrency, 
-  onCurrencyChange 
+  onCurrencyChange,
+  currentUser
 }) => {
   const t = useTranslation(language);
   const langKey = language === 'pt-BR' ? 'pt-BR' : 'en';
@@ -367,20 +369,43 @@ const Transactions: React.FC<TransactionsProps> = ({
 
         // 7. VISTO / ASSINATURA DE CONFERÊNCIA
         y += 15;
-        if (y > pageHeight - 40) {
+        if (y > pageHeight - 45) {
           doc.addPage();
           y = 30;
         }
 
         doc.setDrawColor(203, 213, 225); // Slate 300
         doc.setLineDashPattern([2, 2], 0);
-        doc.line(65, y + 10, 145, y + 10);
+        
+        // Left signature line (User)
+        doc.line(25, y + 15, 95, y + 15);
+        
+        // Right signature line (Supervisor / GTS Software)
+        doc.line(115, y + 15, 185, y + 15);
         doc.setLineDashPattern([], 0); // resets dash
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text(cleanCharText(term.reconciliationLabel), 82, y + 15);
+
+        // Center labels horizontally under each signature line
+        const userLabelText = isPT ? 'Assinatura do Usuário' : 'User Signature';
+        doc.text(cleanCharText(userLabelText), 60, y + 20, { align: 'center' });
+        
+        const userName = currentUser?.name || '';
+        if (userName) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42); // slate-900
+          doc.text(cleanCharText(userName), 60, y + 24, { align: 'center' });
+        }
+
+        // Right Column: Conferral Signature
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(cleanCharText(term.reconciliationLabel), 150, y + 20, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42); // slate-900
+        doc.text("GTS Global Tech Software", 150, y + 24, { align: 'center' });
 
         // 8. RODAPÉ DE AUTORIA EXCLUSIVA
         doc.setFont('helvetica', 'bold');
