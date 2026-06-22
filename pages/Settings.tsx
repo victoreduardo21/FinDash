@@ -133,7 +133,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
   };
 
   const handleSaveProfile = async () => {
-    // Validação de campos obrigatórios do endereço e cadastro básico
+    // Validação de campos obrigatórios do endereço, cadastro básico e dados fiscais
     if (!formData.name?.trim()) {
         alert("O nome é obrigatório.");
         return;
@@ -144,6 +144,22 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
     }
     if (!formData.phone?.trim()) {
         alert("O telefone é obrigatório.");
+        return;
+    }
+    if (!formData.cnpj?.trim()) {
+        alert("O CNPJ é obrigatório.");
+        return;
+    }
+    if (!formData.companyName?.trim()) {
+        alert("A Razão Social / Nome da Empresa é obrigatória.");
+        return;
+    }
+    if (!formData.stateRegistration?.trim()) {
+        alert("A Inscrição Estadual (IE) é obrigatória.");
+        return;
+    }
+    if (!formData.municipalRegistration?.trim()) {
+        alert("A Inscrição Municipal (IM) é obrigatória.");
         return;
     }
     if (!formData.cep?.trim()) {
@@ -168,6 +184,14 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
     }
     if (!formData.state?.trim()) {
         alert("O Estado (UF) é obrigatório.");
+        return;
+    }
+    if (!formData.onboardingObjective?.trim()) {
+        alert("O principal objetivo de uso é obrigatório.");
+        return;
+    }
+    if (!formData.onboardingReason?.trim()) {
+        alert("O que você busca em nosso sistema é obrigatório.");
         return;
     }
 
@@ -245,11 +269,11 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                     </div>
 
                     <div className="space-y-4">
-                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1. Identificação e Dados Fiscais (NF-e)</h5>
+                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1. Identificação e Dados Fiscais</h5>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('name')}</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('name')} <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" value={isEditing ? formData.name : currentUser.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 rounded-lg border text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div>
@@ -260,11 +284,11 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('cpf')}</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('cpf')} <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="000.000.000-00" value={isEditing ? formData.cpf : (currentUser.cpf || '-')} onChange={(e) => setFormData({...formData, cpf: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CNPJ (Se aplicável)</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CNPJ <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="00.000.000/0000-00" value={isEditing ? formData.cnpj : (currentUser.cnpj || '-')} onChange={(e) => setFormData({...formData, cnpj: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                         </div>
@@ -272,24 +296,24 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                         {(formData.cnpj || isEditing) && (
                             <div className="space-y-4 pt-2">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Razão Social / Nome da Empresa</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Razão Social / Nome da Empresa <span className="text-red-500 font-bold">*</span></label>
                                     <input type="text" placeholder="Razão Social completa para NF" value={isEditing ? formData.companyName : (currentUser.companyName || '-')} onChange={(e) => setFormData({...formData, companyName: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Estadual (IE)</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Estadual (IE) <span className="text-red-500 font-bold">*</span></label>
                                         <input type="text" placeholder="Isento ou Número IE" value={isEditing ? formData.stateRegistration : (currentUser.stateRegistration || '-')} onChange={(e) => setFormData({...formData, stateRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Municipal (IM)</label>
-                                        <input type="text" placeholder="Opcional" value={isEditing ? formData.municipalRegistration : (currentUser.municipalRegistration || '-')} onChange={(e) => setFormData({...formData, municipalRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Inscrição Municipal (IM) <span className="text-red-500 font-bold">*</span></label>
+                                        <input type="text" placeholder="Número IM" value={isEditing ? formData.municipalRegistration : (currentUser.municipalRegistration || '-')} onChange={(e) => setFormData({...formData, municipalRegistration: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phone')}</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phone')} <span className="text-red-500 font-bold">*</span></label>
                             <div className="flex gap-2">
                                 <div className="relative flex-grow">
                                     <input 
@@ -345,22 +369,22 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                     </div>
 
                     <div className="space-y-4 pt-4 border-t dark:border-gray-700">
-                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">2. Endereço Comercial ou Residencial (NF-e)</h5>
+                        <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">2. Endereço Comercial ou Residencial</h5>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CEP</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CEP <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="00000-000" value={isEditing ? formData.cep : (currentUser.cep || '-')} onChange={(e) => setFormData({...formData, cep: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Logradouro / Rua</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Logradouro / Rua <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="Av / Rua / Beco" value={isEditing ? formData.street : (currentUser.street || '-')} onChange={(e) => setFormData({...formData, street: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Número</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Número <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="123" value={isEditing ? formData.number : (currentUser.number || '-')} onChange={(e) => setFormData({...formData, number: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div>
@@ -368,18 +392,18 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                                 <input type="text" placeholder="Apto 4B" value={isEditing ? formData.complement : (currentUser.complement || '-')} onChange={(e) => setFormData({...formData, complement: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bairro</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bairro <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="Centro" value={isEditing ? formData.neighborhood : (currentUser.neighborhood || '-')} onChange={(e) => setFormData({...formData, neighborhood: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="md:col-span-3">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cidade</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cidade <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" placeholder="São Paulo" value={isEditing ? formData.city : (currentUser.city || '-')} onChange={(e) => setFormData({...formData, city: e.target.value})} disabled={!isEditing} className={`block w-full px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                             <div className="md:col-span-1">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">UF / Estado</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">UF / Estado <span className="text-red-500 font-bold">*</span></label>
                                 <input type="text" maxLength={2} placeholder="SP" value={isEditing ? formData.state : (currentUser.state || '-')} onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})} disabled={!isEditing} className={`block w-full text-center px-4 py-2 border rounded-lg text-sm ${isEditing ? 'bg-white dark:bg-gray-800 border-blue-500 dark:text-white' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-300'}`} />
                             </div>
                         </div>
@@ -389,7 +413,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                         <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">3. Experiência e Objetivos de Uso</h5>
                         
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Qual o seu principal objetivo com o Money Dashs?</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Qual o seu principal objetivo com o Money Dashs? <span className="text-red-500 font-bold">*</span></label>
                             {isEditing ? (
                                 <select 
                                     value={formData.onboardingObjective} 
@@ -414,7 +438,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">O que você busca em nosso sistema para o seu dia-a-dia?</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">O que você busca em nosso sistema para o seu dia-a-dia? <span className="text-red-500 font-bold">*</span></label>
                             {isEditing ? (
                                 <textarea 
                                     rows={3} 

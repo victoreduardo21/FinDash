@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, activePage, setAct
 
     return (
     <>
-        <div className={sidebarClasses}>
+        <div id="tour-sidebar-menu" className={sidebarClasses}>
             <div className="flex items-center justify-between p-4 border-b border-gray-800">
                 <div className="flex items-center gap-2">
                     <div className="bg-blue-600 p-1 rounded-lg shadow-lg shadow-blue-500/20">

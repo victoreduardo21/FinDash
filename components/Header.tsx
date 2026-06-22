@@ -6,6 +6,7 @@ import { PlusIcon } from './icons/PlusIcon';
 import { MenuIcon } from './icons/MenuIcon';
 import { User, CalendarEvent, Page, Language, Subscription, CreditCard, CreditTransaction } from '../types';
 import { ClockIcon } from './icons/ClockIcon';
+import { HelpCircle } from 'lucide-react';
 
 interface HeaderProps {
     onLogout: () => void;
@@ -20,6 +21,7 @@ interface HeaderProps {
     subscriptions?: Subscription[];
     creditCards?: CreditCard[];
     creditTransactions?: CreditTransaction[];
+    onStartTour?: () => void;
 }
 
 const getInvoiceDueDate = (txDateStr: string, closingDay: number, dueDay: number): string => {
@@ -57,7 +59,8 @@ const Header: React.FC<HeaderProps> = ({
     toggleSidebar,
     subscriptions = [],
     creditCards = [],
-    creditTransactions = []
+    creditTransactions = [],
+    onStartTour
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -222,12 +225,24 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-2 md:gap-4">
          {/* Botão de Nova Transação Circular no Mobile */}
          <button 
+            id="tour-btn-new-transaction"
             onClick={onNewTransaction} 
             className="flex items-center justify-center bg-blue-600 text-white w-10 h-10 md:w-auto md:h-auto md:px-5 md:py-2.5 rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-90"
           >
             <PlusIcon className="h-6 w-6 md:mr-2" />
             <span className="hidden md:inline font-bold text-sm">Nova Transação</span>
         </button>
+
+        {/* Ajuda/Tour Guiado */}
+        {onStartTour && (
+            <button 
+                onClick={onStartTour} 
+                title={language === 'pt-BR' ? 'Iniciar Tour Guiado' : 'Start Guided Tour'}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-all active:scale-95 flex items-center justify-center"
+            >
+                <HelpCircle className="h-7 w-7" />
+            </button>
+        )}
 
         {/* Notificações */}
         <div className="relative" ref={notificationsMenuRef}>

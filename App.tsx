@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import { TourGuide } from './components/TourGuide';
 import BottomNav from './components/BottomNav';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -54,6 +55,26 @@ const App: React.FC = () => {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<PersonalTransaction | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  // Auto-start onboarding tour for new users on log in
+  useEffect(() => {
+    if (token && isAuthReady) {
+        const completed = localStorage.getItem('tour_completed_v1');
+        if (!completed) {
+            const timer = setTimeout(() => {
+                setActivePage('Dashboard');
+                setIsTourOpen(true);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }
+  }, [token, isAuthReady]);
+
+  const handleStartTour = () => {
+    setActivePage('Dashboard');
+    setIsTourOpen(true);
+  };
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -301,6 +322,7 @@ const App: React.FC = () => {
             subscriptions={subscriptions}
             creditCards={creditCards}
             creditTransactions={creditTransactions}
+            onStartTour={handleStartTour}
         />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-6 lg:p-8 pb-28 md:pb-8 no-scrollbar max-w-full">
@@ -422,6 +444,7 @@ const App: React.FC = () => {
       <TransferModal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} onSaveTransfer={handleSaveTransfer} />
       <PlanSelectionModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} onConfirmUpgrade={handleUpdatePlan} currentPlan={currentUser?.plan || 'FREE'} />
       <WhatsAppButton />
+      <TourGuide isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} language={language} />
     </div>
   );
 };

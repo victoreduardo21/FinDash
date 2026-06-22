@@ -136,7 +136,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex gap-2">
+                <div id="tour-currency-selector" className="flex gap-2">
                   <div className="bg-white dark:bg-gray-800 p-1 rounded-2xl flex border border-slate-200 dark:border-gray-700 shadow-sm">
                       <button onClick={() => onCurrencyChange('BRL')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${selectedCurrency === 'BRL' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>BRL</button>
                       <button onClick={() => onCurrencyChange('USD')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${selectedCurrency === 'USD' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>USD</button>
@@ -163,7 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* METRIC CARDS - RESPONSIVO (1, 2 ou 4 colunas) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
+        <div id="tour-metrics-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
             <MetricCard 
               title={t('balance')} 
               value={formatCurrency(totals.saldoTotal)} 
@@ -193,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* PATRIMÔNIO CARD */}
-        <div className="bg-[#0a1122] p-6 md:p-8 rounded-[1.5rem] shadow-2xl text-white flex flex-col justify-between border border-white/5 relative overflow-hidden min-h-[260px]">
+        <div id="tour-net-worth" className="bg-[#0a1122] p-6 md:p-8 rounded-[1.5rem] shadow-2xl text-white flex flex-col justify-between border border-white/5 relative overflow-hidden min-h-[260px]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
             <div className="relative z-10">
                 <h4 className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-3">Total Net Worth</h4>
