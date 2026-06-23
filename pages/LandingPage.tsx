@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RocketLaunchIcon } from '../components/icons/RocketLaunchIcon';
 import { TrendingUpIcon } from '../components/icons/TrendingUpIcon';
 import { UsersIcon } from '../components/icons/UsersIcon';
@@ -9,6 +8,27 @@ import { ChartPieIcon } from '../components/icons/ChartPieIcon';
 import { SwitchHorizontalIcon } from '../components/icons/SwitchHorizontalIcon';
 import { Plan, BillingCycle, Currency, Language } from '../types';
 import { useTranslation } from '../translations';
+import { 
+  LayoutDashboard, 
+  Receipt, 
+  CreditCard as LucideCreditCard, 
+  TrendingUp, 
+  Calendar as LucideCalendar, 
+  Sparkles, 
+  Plus, 
+  ArrowLeftRight, 
+  Search, 
+  CheckCircle,
+  FileDown,
+  Trash2,
+  ChevronRight,
+  ArrowRight,
+  BookmarkCheck,
+  AlertCircle,
+  ShieldCheck,
+  Zap,
+  BarChart3
+} from 'lucide-react';
 
 interface LandingPageProps {
   onLogin: () => void;
@@ -21,6 +41,144 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'pt-BR');
   
   const t = useTranslation(language);
+
+  // --- DEMO INTERATIVA DO SISTEMA ---
+  const [demoTab, setDemoTab] = useState<'Painel' | 'Transações' | 'Cartões' | 'Investimentos' | 'Assinaturas' | 'Agenda'>('Painel');
+  const [demoCurrency, setDemoCurrency] = useState<Currency>('BRL');
+  
+  const exchangeRate = 5.4;
+  
+  const formatDemoVal = (val: number) => {
+    if (demoCurrency === 'USD') {
+      const usdVal = val / exchangeRate;
+      return usdVal.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    }
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const [demoTransactions, setDemoTransactions] = useState([
+    { id: 1, date: '2026-06-22', title: language === 'pt-BR' ? 'Desenvolvimento de Software GTS' : 'GTS Software Development', amount: 8200.00, type: 'INCOME', category: 'Desenvolvimento', wallet: 'Banco Inter' },
+    { id: 2, date: '2026-06-21', title: language === 'pt-BR' ? 'Supermercado Pão de Açúcar' : 'Pao de Acucar Supermarket', amount: -380.00, type: 'EXPENSE', category: 'Alimentação', wallet: 'Nubank' },
+    { id: 3, date: '2026-06-20', title: language === 'pt-BR' ? 'Dividendos de Ações' : 'Stock Dividends', amount: 150.00, type: 'INCOME', category: 'Investimentos', wallet: 'XP Investimentos' },
+    { id: 4, date: '2026-06-18', title: language === 'pt-BR' ? 'Assinatura AWS Cloud' : 'AWS Cloud Subscription', amount: -210.00, type: 'EXPENSE', category: 'Serviços', wallet: 'Inter Global' },
+    { id: 5, date: '2026-06-15', title: language === 'pt-BR' ? 'Combustível Posto Shell' : 'Shell Gas Station', amount: -150.00, type: 'EXPENSE', category: 'Transporte', wallet: 'Nubank' },
+    { id: 6, date: '2026-06-10', title: language === 'pt-BR' ? 'Venda de Criptoativos' : 'Crypto Sale Profit', amount: 1200.00, type: 'INCOME', category: 'Investimentos', wallet: 'Binance' },
+  ]);
+
+  const [newTxTitle, setNewTxTitle] = useState('');
+  const [newTxAmount, setNewTxAmount] = useState('');
+  const [newTxType, setNewTxType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [newTxCategory, setNewTxCategory] = useState('Alimentação');
+  const [demoSearchQuery, setDemoSearchQuery] = useState('');
+  const [isDemoTransferOpen, setIsDemoTransferOpen] = useState(false);
+  const [demoTransferAmount, setDemoTransferAmount] = useState('');
+  const [demoTransferFrom, setDemoTransferFrom] = useState('BRL');
+  const [showDemoNotification, setShowDemoNotification] = useState<string | null>(null);
+
+  const demoTotals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    demoTransactions.forEach(t => {
+      if (t.type === 'INCOME') {
+        income += t.amount;
+      } else {
+        expense += Math.abs(t.amount);
+      }
+    });
+    const balance = income - expense;
+    const invested = 35000.00;
+    const netWorth = balance + invested;
+    const margin = income > 0 ? ((income - expense) / income) * 100 : 0;
+
+    return { balance, income, expense, invested, netWorth, margin };
+  }, [demoTransactions]);
+
+  const triggerNotification = (msg: string) => {
+    setShowDemoNotification(msg);
+    setTimeout(() => {
+      setShowDemoNotification(null);
+    }, 4000);
+  };
+
+  const handleAddDemoTx = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTxTitle.trim() || !newTxAmount) return;
+    const amountVal = parseFloat(newTxAmount);
+    if (isNaN(amountVal)) return;
+
+    const newTx = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      title: newTxTitle.trim(),
+      amount: newTxType === 'INCOME' ? amountVal : -amountVal,
+      type: newTxType,
+      category: newTxCategory,
+      wallet: 'Carteira Demo'
+    };
+
+    setDemoTransactions([newTx, ...demoTransactions]);
+    setNewTxTitle('');
+    setNewTxAmount('');
+    triggerNotification(language === 'pt-BR' ? 'Transação adicionada com sucesso!' : 'Transaction added successfully!');
+  };
+
+  const handleDemoTransferSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!demoTransferAmount) return;
+    const amountVal = parseFloat(demoTransferAmount);
+    if (isNaN(amountVal)) return;
+
+    if (demoTransferFrom === 'BRL') {
+      const newTxOut = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        title: language === 'pt-BR' ? 'Câmbio: Saída de BRL' : 'Exchange: BRL Outflow',
+        amount: -amountVal,
+        type: 'EXPENSE',
+        category: 'Câmbio',
+        wallet: 'Carteira BRL'
+      };
+      const newTxIn = {
+        id: Date.now() + 1,
+        date: new Date().toISOString().split('T')[0],
+        title: language === 'pt-BR' ? 'Câmbio: Entrada de USD' : 'Exchange: USD Inflow',
+        amount: amountVal,
+        type: 'INCOME',
+        category: 'Câmbio',
+        wallet: 'Carteira USD'
+      };
+      setDemoTransactions([newTxOut, newTxIn, ...demoTransactions]);
+    } else {
+      const newTxOut = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        title: language === 'pt-BR' ? 'Câmbio: Saída de USD' : 'Exchange: USD Outflow',
+        amount: -amountVal,
+        type: 'EXPENSE',
+        category: 'Câmbio',
+        wallet: 'Carteira USD'
+      };
+      const newTxIn = {
+        id: Date.now() + 1,
+        date: new Date().toISOString().split('T')[0],
+        title: language === 'pt-BR' ? 'Câmbio: Entrada de BRL' : 'Exchange: BRL Inflow',
+        amount: amountVal,
+        type: 'INCOME',
+        category: 'Câmbio',
+        wallet: 'Carteira BRL'
+      };
+      setDemoTransactions([newTxOut, newTxIn, ...demoTransactions]);
+    }
+
+    setIsDemoTransferOpen(false);
+    setDemoTransferAmount('');
+    triggerNotification(language === 'pt-BR' ? 'Câmbio processado instantaneamente!' : 'Currency exchange completed instantly!');
+  };
+
+  const handleDeleteDemoTx = (id: number) => {
+    setDemoTransactions(demoTransactions.filter(t => t.id !== id));
+    triggerNotification(language === 'pt-BR' ? 'Transação removida!' : 'Transaction removed!');
+  };
 
   const toggleLanguage = (lang: Language) => {
       setLanguage(lang);
@@ -92,6 +250,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
 
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
                 <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-blue-600 transition-colors">{t('features')}</a>
+                <a href="#qualidades" onClick={(e) => scrollToSection(e, 'qualidades')} className="hover:text-blue-600 transition-colors">{language === 'pt-BR' ? 'Qualidades' : 'Qualities'}</a>
                 <a href="#beneficios" onClick={(e) => scrollToSection(e, 'beneficios')} className="hover:text-blue-600 transition-colors">{t('benefits')}</a>
                 <a href="#planos" onClick={(e) => scrollToSection(e, 'planos')} className="hover:text-blue-600 transition-colors">{t('plans')}</a>
             </div>
@@ -141,7 +300,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                 </button>
             </div>
 
-            {/* --- MOCKUP DO SISTEMA (AJUSTADO PARA A IMAGEM) --- */}
+            {/* --- MOCKUP DO SISTEMA --- */}
             <div className="relative mx-auto max-w-6xl animate-fade-in-up px-4">
                 <div className="relative rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden aspect-[16/10] flex flex-col transition-transform duration-500 hover:scale-[1.01]">
                     {/* Barra do Navegador */}
@@ -153,7 +312,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                         </div>
                         <div className="flex-1 flex justify-center">
                             <div className="px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] text-slate-400 font-medium flex items-center gap-2 w-full max-w-md justify-center">
-                                <span className="opacity-50">🔒</span> app.moneydashs.com/dashboard/global
+                                <span className="opacity-50">🔒</span> moneydashs.com
                             </div>
                         </div>
                     </div>
@@ -238,7 +397,106 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
           </div>
       </section>
 
-      {/* --- BENEFITS SECTION (AJUSTADO PARA A IMAGEM) --- */}
+      {/* --- NOVA SECÇÃO: QUALIDADES DO SISTEMA (COM IMAGEM) --- */}
+      <section id="qualidades" className="py-24 bg-slate-50 border-t border-b border-slate-100 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            
+            {/* Coluna do Texto / Qualidades */}
+            <div className="w-full lg:w-1/2 space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-4 h-4" />
+                {language === 'pt-BR' ? 'Excelência Estratégica' : 'Strategic Excellence'}
+              </div>
+              
+              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                {language === 'pt-BR' 
+                  ? 'O Planeamento Inteligente que a sua Vida Financeira Exige' 
+                  : 'The Intelligent Planning Your Financial Life Demands'}
+              </h2>
+              
+              <p className="text-slate-500 text-lg leading-relaxed">
+                {language === 'pt-BR'
+                  ? 'Não se trata apenas de registar despesas. O Money Dashs entrega uma arquitetura completa para desenhar o seu futuro, permitindo visibilidade de longo prazo e decisões baseadas em dados reais.'
+                  : 'It is not just about logging expenses. Money Dashs delivers a complete architecture to design your future, allowing long-term visibility and decisions based on real data.'}
+              </p>
+
+              {/* Lista de Qualidades Metrificadas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                <div className="flex gap-4 items-start">
+                  <div className="p-3 bg-white rounded-xl shadow-md text-blue-600 border border-slate-100">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">{language === 'pt-BR' ? 'Segurança Absoluta' : 'Absolute Security'}</h4>
+                    <p className="text-slate-500 text-sm mt-1">{language === 'pt-BR' ? 'Dados encriptados de ponta a ponta.' : 'End-to-end encrypted data.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="p-3 bg-white rounded-xl shadow-md text-indigo-600 border border-slate-100">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">{language === 'pt-BR' ? 'Agilidade Global' : 'Global Agility'}</h4>
+                    <p className="text-slate-500 text-sm mt-1">{language === 'pt-BR' ? 'Conversão e atualização em tempo real.' : 'Real-time conversion & updates.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="p-3 bg-white rounded-xl shadow-md text-emerald-600 border border-slate-100">
+                    <BarChart3 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">{language === 'pt-BR' ? 'Visão de Futuro' : 'Future Vision'}</h4>
+                    <p className="text-slate-500 text-sm mt-1">{language === 'pt-BR' ? 'Previsibilidade orçamental precisa.' : 'Accurate budget predictability.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="p-3 bg-white rounded-xl shadow-md text-purple-600 border border-slate-100">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">{language === 'pt-BR' ? 'Interface Premium' : 'Premium Interface'}</h4>
+                    <p className="text-slate-500 text-sm mt-1">{language === 'pt-BR' ? 'Fácil, limpa e altamente intuitiva.' : 'Easy, clean, and highly intuitive.'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Coluna da Imagem Requisitada com Efeitos */}
+            <div className="w-full lg:w-1/2 relative flex justify-center">
+              <div className="relative max-w-lg lg:max-w-full rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/10 border border-slate-200/60 bg-white p-4 group">
+                
+                {/* Imagem em si */}
+                <img 
+                  src="https://primeirapagina.com.br/wp-content/uploads/2024/07/planejamento-financeiro.jpg" 
+                  alt="Planeamento Financeiro Inteligente" 
+                  className="rounded-2xl object-cover w-full h-[350px] sm:h-[450px] transition-transform duration-700 group-hover:scale-105"
+                />
+
+                {/* Badge Flutuante em Glassmorphism sobre a imagem */}
+                <div className="absolute bottom-10 left-10 right-10 bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/40 shadow-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-sm font-bold text-slate-800">
+                      {language === 'pt-BR' ? 'Gráficos de Crescimento Ativos' : 'Growth Charts Active'}
+                    </span>
+                  </div>
+                  <span className="text-xs font-extrabold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full">
+                    100% Digital
+                  </span>
+                </div>
+                
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* --- BENEFITS SECTION --- */}
       <section id="beneficios" className="py-32 bg-[#020617] text-white overflow-hidden relative">
           {/* Luz de fundo sutil */}
           <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] pointer-events-none"></div>
@@ -276,7 +534,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                       <div className="relative p-12 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden group">
                            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-50"></div>
                            
-                           {/* Card de Investimento (O da imagem) */}
+                           {/* Card de Investimento */}
                            <div className="relative bg-[#0a0f1e]/80 p-8 rounded-3xl border border-white/10 shadow-2xl min-w-[320px] md:min-w-[450px] transform transition-transform group-hover:translate-y-[-10px]">
                                <div className="flex justify-between items-center gap-12">
                                    <div className="flex items-center gap-5">
@@ -288,7 +546,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                                    <div className="text-right">
                                        <span className="text-2xl font-black text-[#22c55e] drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]">R$ 15.000,00</span>
                                    </div>
-                               </div>
+                                </div>
                            </div>
 
                            {/* Elementos decorativos */}
@@ -333,7 +591,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                       <button onClick={() => onRegister('FREE', 'MONTHLY')} className="w-full py-4 px-6 border border-slate-200 text-slate-900 rounded-xl font-bold text-base hover:bg-slate-50 transition-colors">{language === 'pt-BR' ? 'Começar agora' : 'Get Started'}</button>
                   </div>
 
-                  {/* PRÓ (PRO) - HIGHLIGHTED */}
+                  {/* PRÓ (PRO) */}
                   <div className="bg-white rounded-3xl p-10 border-[3px] border-blue-600 shadow-2xl shadow-blue-100 relative transform md:-translate-y-4 flex flex-col items-start text-left z-10">
                       <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-black px-4 py-2 rounded-bl-2xl rounded-tr-xl tracking-widest shadow-lg">GLOBAL</div>
                       <span className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">PRÓ</span>
