@@ -45,6 +45,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
     const [amount, setAmount] = useState('');
     const [dueDay, setDueDay] = useState('10');
     const [category, setCategory] = useState(language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0]);
+    const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
 
     const categories = language === 'pt-BR' ? CATEGORIES_PT : CATEGORIES_EN;
 
@@ -64,11 +65,13 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
                 currency: selectedCurrency,
                 dueDay: parseInt(dueDay),
                 category,
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                startDate: startDate || new Date().toISOString().slice(0, 10)
             }, token);
             setIsModalOpen(false);
             setDescription('');
             setAmount('');
+            setStartDate(new Date().toISOString().slice(0, 10));
         } catch (err) {
             console.error("Error saving subscription:", err);
         }
@@ -143,9 +146,16 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-900 dark:text-white">{sub.description}</span>
-                                                <span className={`text-[10px] font-black uppercase tracking-tighter ${sub.status === 'ACTIVE' ? 'text-green-500' : 'text-orange-500'}`}>
-                                                    {sub.status === 'ACTIVE' ? t('activeSub') : t('pausedSub')}
-                                                </span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className={`text-[10px] font-black uppercase tracking-tighter ${sub.status === 'ACTIVE' ? 'text-green-500' : 'text-orange-500'}`}>
+                                                        {sub.status === 'ACTIVE' ? t('activeSub') : t('pausedSub')}
+                                                    </span>
+                                                    {sub.startDate && (
+                                                        <span className="text-[10px] font-bold text-gray-400">
+                                                            • {language === 'pt-BR' ? `Início: ${sub.startDate.split('-').reverse().join('/')}` : `Start: ${sub.startDate}`}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -242,6 +252,23 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
                                         className="w-full px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                                     />
                                 </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
+                                    {language === 'pt-BR' ? 'Data de Início' : 'Start Date'}
+                                </label>
+                                <input 
+                                    type="date" 
+                                    value={startDate} 
+                                    onChange={e => setStartDate(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                    required
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                                    {language === 'pt-BR' 
+                                        ? 'A assinatura será cobrada a partir deste mês de início selecionado.' 
+                                        : 'The subscription will be active from this selected start month onwards.'}
+                                </p>
                             </div>
                             <button 
                                 onClick={handleSave}

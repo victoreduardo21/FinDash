@@ -51,6 +51,7 @@ export interface Subscription {
     category: string;
     status: 'ACTIVE' | 'PAUSED';
     userId?: string;
+    startDate?: string;
 }
 
 export interface CreditCard {

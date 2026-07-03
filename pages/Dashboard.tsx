@@ -69,7 +69,14 @@ const Dashboard: React.FC<DashboardProps> = ({
       const txsMes = txs.filter(t => t.date.startsWith(selectedMonth));
       
       const subsTotal = (subscriptions || [])
-          .filter((s: Subscription) => s.status === 'ACTIVE' && s.currency === selectedCurrency)
+          .filter((s: Subscription) => {
+              if (s.status !== 'ACTIVE' || s.currency !== selectedCurrency) return false;
+              if (s.startDate) {
+                  const startMonth = s.startDate.slice(0, 7);
+                  return selectedMonth >= startMonth;
+              }
+              return true;
+          })
           .reduce((acc: number, s: Subscription) => acc + (Number(s.amount) || 0), 0);
 
       // Values for Cards (Matching user's specific requirement: Income includes everything, Expenses excludes investments)
@@ -105,23 +112,30 @@ const Dashboard: React.FC<DashboardProps> = ({
     const monthlyChartData = useMemo(() => {
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const currentYear = selectedMonth.split('-')[0];
-      
-      const subsTotal = (subscriptions || [])
-          .filter((s: Subscription) => s.status === 'ACTIVE' && s.currency === selectedCurrency)
-          .reduce((acc: number, s: Subscription) => acc + (Number(s.amount) || 0), 0);
 
       return months.map((name, i) => {
           const mStr = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
           const txs = transactions.filter((t: PersonalTransaction) => t.date.startsWith(mStr) && (t.currency || 'BRL') === selectedCurrency);
           const ctxs = (creditTransactions || []).filter((c: CreditTransaction) => c.date.startsWith(mStr) && c.status !== 'PAID');
           
+          const subsTotalForMonth = (subscriptions || [])
+              .filter((s: Subscription) => {
+                  if (s.status !== 'ACTIVE' || s.currency !== selectedCurrency) return false;
+                  if (s.startDate) {
+                      const startMonth = s.startDate.slice(0, 7);
+                      return mStr >= startMonth;
+                  }
+                  return true;
+              })
+              .reduce((acc: number, s: Subscription) => acc + (Number(s.amount) || 0), 0);
+
           return {
               name,
               // Graph logic: Matching Cards (Incomes: all, Expenses: real + pending credit + subscriptions)
               income: txs.filter((t: PersonalTransaction) => t.type === TransactionType.Receita).reduce((acc: number, t: PersonalTransaction) => acc + (Number(t.amount) || 0), 0),
               expense: txs.filter((t: PersonalTransaction) => t.type === TransactionType.Despesa && !isInternalTransfer(t.category)).reduce((acc: number, t: PersonalTransaction) => acc + (Number(t.amount) || 0), 0) +
                        ctxs.reduce((acc: number, c: CreditTransaction) => acc + (Number(c.amount) || 0), 0) +
-                       subsTotal
+                       subsTotalForMonth
           };
       });
     }, [transactions, selectedCurrency, selectedMonth, subscriptions, creditTransactions]);

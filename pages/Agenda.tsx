@@ -162,6 +162,11 @@ const Agenda: React.FC<AgendaProps> = ({
         // 2. Active subscriptions
         subscriptions.forEach(sub => {
             if (sub.status === 'ACTIVE') {
+                if (sub.startDate) {
+                    const startMonth = sub.startDate.slice(0, 7);
+                    const curMonthStr = `${curYear}-${curMonth}`;
+                    if (curMonthStr < startMonth) return;
+                }
                 let dayNum = sub.dueDay;
                 if (dayNum < 1) dayNum = 1;
                 if (dayNum > 28) dayNum = 28; // avoid leap year issues
@@ -260,6 +265,11 @@ const Agenda: React.FC<AgendaProps> = ({
 
         subscriptions.forEach(sub => {
             if (sub.status === 'ACTIVE') {
+                if (sub.startDate) {
+                    const startMonth = sub.startDate.slice(0, 7);
+                    const curMonthStr = `${curYear}-${curMonth}`;
+                    if (curMonthStr < startMonth) return;
+                }
                 let dayNum = sub.dueDay;
                 if (dayNum < 1) dayNum = 1;
                 if (dayNum > 28) dayNum = 28;
