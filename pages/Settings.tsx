@@ -494,10 +494,79 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
           )}
 
           {/* APARÊNCIA */}
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border dark:border-gray-700">
-              <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-6 border-b pb-4 dark:border-gray-700">{t('appearance')}</h4>
-              <div className="flex items-center justify-between mb-6"><div><p className="font-bold text-gray-800 dark:text-white">{t('darkMode')}</p></div><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className={`w-14 h-8 rounded-full transition-all border-2 flex items-center ${theme === 'dark' ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-300'}`}><span className={`w-6 h-6 bg-white rounded-full transition-all shadow-md flex items-center justify-center ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}>{theme === 'dark' ? <MoonIcon className="h-3 w-3 text-blue-600" /> : <SunIcon className="h-3 w-3 text-yellow-500" />}</span></button></div>
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border dark:border-gray-700 space-y-6">
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white border-b pb-4 dark:border-gray-700">{t('appearance')}</h4>
+              <div className="flex items-center justify-between"><div><p className="font-bold text-gray-800 dark:text-white">{t('darkMode')}</p></div><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className={`w-14 h-8 rounded-full transition-all border-2 flex items-center ${theme === 'dark' ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-300'}`}><span className={`w-6 h-6 bg-white rounded-full transition-all shadow-md flex items-center justify-center ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}>{theme === 'dark' ? <MoonIcon className="h-3 w-3 text-blue-600" /> : <SunIcon className="h-3 w-3 text-yellow-500" />}</span></button></div>
               <div className="flex items-center justify-between border-t pt-6 dark:border-gray-700"><div><p className="font-bold text-gray-800 dark:text-white">{t('language')}</p></div><div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-full border dark:border-gray-600"><button onClick={() => onLanguageChange('pt-BR')} className={`px-3 py-1 rounded-full text-xs font-bold ${language === 'pt-BR' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-400'}`}>PT-BR</button><button onClick={() => onLanguageChange('en-US')} className={`px-3 py-1 rounded-full text-xs font-bold ${language === 'en-US' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-400'}`}>EN-US</button></div></div>
+              
+              {/* Seção de Notificações de Dispositivo */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t pt-6 dark:border-gray-700 gap-4">
+                  <div>
+                      <p className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
+                          <BellRing className="w-4 h-4 text-blue-600" /> 
+                          {language === 'pt-BR' ? 'Notificações no Dispositivo' : 'Device Notifications'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {language === 'pt-BR' 
+                            ? 'Ative para receber avisos e notificações do sistema diretamente no celular ou computador.' 
+                            : 'Enable to receive system warnings and alerts directly on your phone or computer.'}
+                      </p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                      <button 
+                          onClick={async () => {
+                              if (!('Notification' in window)) {
+                                  alert('Seu navegador não suporta notificações de sistema.');
+                                  return;
+                              }
+                              if (Notification.permission === 'default') {
+                                  const permission = await Notification.requestPermission();
+                                  if (permission === 'granted') {
+                                      localStorage.setItem('gts_device_notifications', 'true');
+                                      new Notification('Notificações Ativas! 🎉', {
+                                          body: 'Excelente! Agora você receberá os avisos do sistema diretamente no seu dispositivo.',
+                                      });
+                                      window.location.reload();
+                                  }
+                              } else if (Notification.permission === 'denied') {
+                                  alert('Permissão de notificações bloqueada no navegador. Por favor, ative nas configurações do seu navegador para este site.');
+                              } else {
+                                  const currentVal = localStorage.getItem('gts_device_notifications') === 'true';
+                                  const newVal = !currentVal;
+                                  localStorage.setItem('gts_device_notifications', newVal ? 'true' : 'false');
+                                  if (newVal) {
+                                      new Notification('Notificações Reativadas! 🚀', {
+                                          body: 'As notificações do sistema voltaram a ficar ativas.',
+                                      });
+                                  }
+                                  window.location.reload();
+                              }
+                          }}
+                          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                              ('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('gts_device_notifications') === 'true')
+                              ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-200' 
+                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                          }`}
+                      >
+                          {('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('gts_device_notifications') === 'true')
+                              ? (language === 'pt-BR' ? 'Ativo ●' : 'Enabled ●') 
+                              : (language === 'pt-BR' ? 'Ativar Notificações' : 'Enable Notifications')}
+                      </button>
+
+                      {('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('gts_device_notifications') === 'true') && (
+                          <button
+                              onClick={() => {
+                                  new Notification('Teste de Alerta GTS 🚀', {
+                                      body: 'Funcionando perfeitamente! Este é o aviso que você receberá.',
+                                  });
+                              }}
+                              className="px-3 py-2 text-xs font-bold bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-white rounded-xl transition-all"
+                          >
+                              {language === 'pt-BR' ? 'Testar' : 'Test'}
+                          </button>
+                      )}
+                  </div>
+              </div>
           </div>
         </div>
       </div>

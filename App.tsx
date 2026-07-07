@@ -213,9 +213,30 @@ const App: React.FC = () => {
       handleFirestoreError(error, OperationType.LIST, 'subscriptions');
     });
 
+    let isInitialNotifLoad = true;
     const qNotif = query(collection(db, 'notifications'), where('userId', 'in', ['all', token]));
     const unsubNotif = onSnapshot(qNotif, (snap) => {
-      setSystemNotifications(snap.docs.map(d => ({ ...d.data(), id: d.id } as SystemNotification)));
+      const loadedNotifs = snap.docs.map(d => ({ ...d.data(), id: d.id } as SystemNotification));
+      setSystemNotifications(loadedNotifs);
+      
+      if (!isInitialNotifLoad) {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            const isPushEnabled = localStorage.getItem('gts_device_notifications') === 'true';
+            if (isPushEnabled && 'Notification' in window && Notification.permission === 'granted') {
+              try {
+                new Notification(data.title || 'Novo Alerta do Sistema', {
+                  body: data.message || '',
+                });
+              } catch (e) {
+                console.error("Erro ao disparar notificação local:", e);
+              }
+            }
+          }
+        });
+      }
+      isInitialNotifLoad = false;
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'notifications');
     });

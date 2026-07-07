@@ -68,8 +68,48 @@ const Header: React.FC<HeaderProps> = ({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [dismissedNotifs, setDismissedNotifs] = useState<string[]>([]);
   const [selectedSystemNotif, setSelectedSystemNotif] = useState<any | null>(null);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setIsPushEnabled(Notification.permission === 'granted' && localStorage.getItem('gts_device_notifications') === 'true');
+    }
+  }, []);
+
+  const handleToggleDeviceNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert(language === 'pt-BR' ? 'Seu navegador não suporta notificações de sistema.' : 'Your browser does not support system notifications.');
+      return;
+    }
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        localStorage.setItem('gts_device_notifications', 'true');
+        setIsPushEnabled(true);
+        new Notification(language === 'pt-BR' ? 'Notificações Ativas! 🎉' : 'Notifications Enabled! 🎉', {
+          body: language === 'pt-BR' ? 'Agora você receberá avisos importantes do sistema.' : 'Now you will receive important system notifications.',
+        });
+      } else {
+        localStorage.setItem('gts_device_notifications', 'false');
+        setIsPushEnabled(false);
+      }
+    } else if (Notification.permission === 'denied') {
+      alert(language === 'pt-BR' 
+        ? 'As notificações foram bloqueadas no seu navegador. Ative as permissões nas configurações do site no seu navegador.' 
+        : 'Notifications were blocked in your browser. Enable permissions in your browser settings.');
+    } else {
+      const nextState = !isPushEnabled;
+      localStorage.setItem('gts_device_notifications', nextState ? 'true' : 'false');
+      setIsPushEnabled(nextState);
+      if (nextState) {
+        new Notification(language === 'pt-BR' ? 'Notificações Ativas! 🚀' : 'Notifications Active! 🚀', {
+          body: language === 'pt-BR' ? 'As notificações do sistema voltaram a ficar ativas.' : 'System notifications are active again.',
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -296,6 +336,24 @@ const Header: React.FC<HeaderProps> = ({
                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                         {language === 'pt-BR' ? 'Notificações' : 'Notifications'}
                     </div>
+                    
+                    {/* Ativador de Notificações rápidas no dispositivo */}
+                    <div className="px-4 py-2 bg-blue-50/20 dark:bg-slate-900/40 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                            📱 {language === 'pt-BR' ? 'Notificações de Celular/PC' : 'Phone/PC Notifications'}
+                        </span>
+                        <button
+                            onClick={handleToggleDeviceNotifications}
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold transition-all ${
+                                isPushEnabled 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' 
+                                : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 hover:bg-blue-100'
+                            }`}
+                        >
+                            {isPushEnabled ? (language === 'pt-BR' ? 'Ativas' : 'Active') : (language === 'pt-BR' ? 'Ativar' : 'Enable')}
+                        </button>
+                    </div>
+
                     <div className="max-h-80 overflow-y-auto">
                         {notifications.length === 0 ? (
                             <div className="p-8 text-center text-gray-400 text-sm">
