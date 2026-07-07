@@ -78,6 +78,7 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
     
     // Message toast/status
     const [adminToast, setAdminToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     const stats = useMemo(() => {
         const activeUsers = users.filter(u => u.subscriptionStatus === 'ACTIVE');
@@ -178,7 +179,6 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
     };
 
     const handleDeleteNotification = async (notifId: string) => {
-        if (!window.confirm("Deseja realmente apagar esta mensagem? Ela desaparecerá do sininho dos usuários.")) return;
         try {
             await api.deleteNotification(notifId, token);
             setAdminToast({ message: "Mensagem apagada com sucesso!", type: 'success' });
@@ -602,13 +602,36 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
                                                     {notif.message}
                                                 </p>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteNotification(notif.id)}
-                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
-                                                title="Apagar comunicado"
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
+                                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                {confirmDeleteId === notif.id ? (
+                                                    <div className="flex items-center gap-1 animate-fade-in">
+                                                        <button
+                                                            onClick={() => {
+                                                                handleDeleteNotification(notif.id);
+                                                                setConfirmDeleteId(null);
+                                                            }}
+                                                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm"
+                                                            title="Confirmar exclusão"
+                                                        >
+                                                            Apagar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setConfirmDeleteId(null)}
+                                                            className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-650 dark:text-gray-300 text-[10px] font-bold rounded-lg transition-colors border border-gray-200 dark:border-gray-700"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setConfirmDeleteId(notif.id)}
+                                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+                                                        title="Apagar comunicado"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
