@@ -12,9 +12,13 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         (
-          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "eduardopontesdias@outlook.com") ||
-          (request.auth.token.email == "gtsglobaltech01@gmail.com")
+          request.auth.token.email == "eduardopontesdias@outlook.com" ||
+          request.auth.token.email == "gtsglobaltech01@gmail.com" ||
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.keys().hasAll(['role']) &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          )
         );
     }
     
@@ -100,6 +104,14 @@ service cloud.firestore {
              data.userId == request.auth.uid;
     }
 
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'message', 'userId', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 2000 &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.createdAt is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -158,6 +170,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidSubscription(request.resource.data);
       allow update: if isAuthenticated() && isDocOwner() && isValidSubscription(request.resource.data);
       allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == 'all' || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAdmin() && isValidNotification(request.resource.data);
+      allow update: if isAdmin() && isValidNotification(request.resource.data);
+      allow delete: if isAdmin();
     }
   }
 }

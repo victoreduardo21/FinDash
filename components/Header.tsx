@@ -4,9 +4,9 @@ import { SearchIcon } from './icons/SearchIcon';
 import { BellIcon } from './icons/BellIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { MenuIcon } from './icons/MenuIcon';
-import { User, CalendarEvent, Page, Language, Subscription, CreditCard, CreditTransaction } from '../types';
+import { User, CalendarEvent, Page, Language, Subscription, CreditCard, CreditTransaction, SystemNotification } from '../types';
 import { ClockIcon } from './icons/ClockIcon';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Megaphone, X } from 'lucide-react';
 
 interface HeaderProps {
     onLogout: () => void;
@@ -22,6 +22,7 @@ interface HeaderProps {
     creditCards?: CreditCard[];
     creditTransactions?: CreditTransaction[];
     onStartTour?: () => void;
+    systemNotifications?: SystemNotification[];
 }
 
 const getInvoiceDueDate = (txDateStr: string, closingDay: number, dueDay: number): string => {
@@ -60,10 +61,13 @@ const Header: React.FC<HeaderProps> = ({
     subscriptions = [],
     creditCards = [],
     creditTransactions = [],
-    onStartTour
+    onStartTour,
+    systemNotifications = []
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [dismissedNotifs, setDismissedNotifs] = useState<string[]>([]);
+  const [selectedSystemNotif, setSelectedSystemNotif] = useState<any | null>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -79,17 +83,42 @@ const Header: React.FC<HeaderProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleDismissNotification = (id: string) => {
+      try {
+          const saved = localStorage.getItem('gts_agenda_checked_virtuals');
+          let checkedVirtuals: string[] = [];
+          if (saved) checkedVirtuals = JSON.parse(saved);
+          if (!checkedVirtuals.includes(id)) {
+              checkedVirtuals.push(id);
+              localStorage.setItem('gts_agenda_checked_virtuals', JSON.stringify(checkedVirtuals));
+              setDismissedNotifs(prev => [...prev, id]);
+          }
+      } catch (err) {
+          console.error(err);
+      }
+  };
   
   const notifications = useMemo(() => {
-      const list: { id: string; description: string; date: string; type: string }[] = [];
+      const list: { id: string; description: string; date: string; type: string; title?: string }[] = [];
       const d = new Date();
       const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       
+      // Retrieve checked virtuals
+      let checkedVirtuals: string[] = [];
+      try {
+          const saved = localStorage.getItem('gts_agenda_checked_virtuals');
+          if (saved) checkedVirtuals = JSON.parse(saved);
+      } catch {}
+
+      const allDismissed = [...checkedVirtuals, ...dismissedNotifs];
+
       // 1. Manual events
       (tasks || []).forEach(task => {
-          if (!task.done && task.date <= todayStr) {
+          const virtualKey = `manual-${task.id}`;
+          if (!task.done && task.date <= todayStr && !allDismissed.includes(virtualKey)) {
               list.push({
-                  id: `manual-${task.id}`,
+                  id: virtualKey,
                   type: 'manual',
                   description: task.description,
                   date: task.date.slice(0, 10)
@@ -115,13 +144,6 @@ const Header: React.FC<HeaderProps> = ({
           return Math.round(diffTime / (1000 * 60 * 60 * 24));
       };
 
-      // Retrieve checked virtuals
-      let checkedVirtuals: string[] = [];
-      try {
-          const saved = localStorage.getItem('gts_agenda_checked_virtuals');
-          if (saved) checkedVirtuals = JSON.parse(saved);
-      } catch {}
-
       // 2. Active subscriptions due within next 3 days of current month
       (subscriptions || []).forEach(sub => {
           if (sub.status === 'ACTIVE') {
@@ -131,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({
               const dayStr = String(dayNum).padStart(2, '0');
               const eventDate = `${curYear}-${curMonth}-${dayStr}`;
               const virtualKey = `sub-${sub.id}-${curYear}-${curMonth}`;
-              if (!checkedVirtuals.includes(virtualKey)) {
+              if (!allDismissed.includes(virtualKey)) {
                   const diff = getDaysDifference(eventDate);
                   if (diff <= 3) {
                       list.push({
@@ -160,7 +182,7 @@ const Header: React.FC<HeaderProps> = ({
               const [y, m] = eventDate.split('-');
               const virtualKey = `card-${card.id}-${y}-${m}`;
 
-              if (totalDue > 0 && !checkedVirtuals.includes(virtualKey)) {
+              if (totalDue > 0 && !allDismissed.includes(virtualKey)) {
                   const diff = getDaysDifference(eventDate);
                   if (diff <= 3) {
                       list.push({
@@ -178,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({
       (creditTransactions || []).forEach(tx => {
           if (tx.isOverdraft && tx.status !== 'PAID') {
               const virtualKey = `overdraft-${tx.id}`;
-              if (!checkedVirtuals.includes(virtualKey)) {
+              if (!allDismissed.includes(virtualKey)) {
                   list.push({
                       id: virtualKey,
                       type: 'overdraft',
@@ -189,8 +211,22 @@ const Header: React.FC<HeaderProps> = ({
           }
       });
 
-      return list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [tasks, subscriptions, creditCards, creditTransactions, language]);
+      // 5. System Messages / Announcements from Admin
+      (systemNotifications || []).forEach(notif => {
+          const virtualKey = `sys-${notif.id}`;
+          if (!allDismissed.includes(virtualKey)) {
+              list.push({
+                  id: virtualKey,
+                  type: 'system',
+                  title: notif.title,
+                  description: notif.message,
+                  date: notif.createdAt
+              });
+          }
+      });
+
+      return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [tasks, subscriptions, creditCards, creditTransactions, systemNotifications, language, dismissedNotifs]);
 
   const userInitials = useMemo(() => {
       const name = currentUser?.name || 'U';
@@ -256,24 +292,59 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             {isNotificationsOpen && (
-                <div className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl py-2 z-50 border border-gray-100 animate-fade-in origin-top-right overflow-hidden">
-                    <div className="px-4 py-3 border-b bg-gray-50/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
-                        Notificações
+                <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl py-2 z-50 border border-gray-100 dark:border-gray-700 animate-fade-in origin-top-right overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                        {language === 'pt-BR' ? 'Notificações' : 'Notifications'}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                         {notifications.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400 text-sm">Tudo em dia!</div>
+                            <div className="p-8 text-center text-gray-400 text-sm">
+                                {language === 'pt-BR' ? 'Tudo em dia!' : 'All caught up!'}
+                            </div>
                         ) : (
-                            <div className="divide-y divide-gray-50">
-                                {notifications.map(item => (
-                                    <button key={item.id} onClick={() => { setActivePage('Agenda'); setIsNotificationsOpen(false); }} className="w-full text-left p-3 hover:bg-blue-50 flex gap-3 items-start">
-                                        <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-full bg-red-50 text-red-500 flex items-center justify-center"><ClockIcon className="w-4 h-4" /></div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-gray-800 truncate">{item.description}</p>
-                                            <p className="text-[10px] text-red-500 font-black mt-0.5 uppercase">{new Date(item.date).toLocaleDateString(language, {timeZone: 'UTC'})}</p>
+                            <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                                {notifications.map(item => {
+                                    const isSystem = item.type === 'system';
+                                    return (
+                                        <div key={item.id} className="relative group w-full text-left hover:bg-blue-50/50 dark:hover:bg-slate-700/30 flex gap-3 items-start p-3">
+                                            <button 
+                                                onClick={() => {
+                                                    if (isSystem) {
+                                                        setSelectedSystemNotif(item);
+                                                    } else {
+                                                        setActivePage('Agenda');
+                                                    }
+                                                    setIsNotificationsOpen(false);
+                                                }}
+                                                className="flex-1 text-left flex gap-3 items-start min-w-0"
+                                            >
+                                                <div className={`mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${isSystem ? 'bg-blue-50 text-blue-500 dark:bg-blue-950/40 dark:text-blue-400' : 'bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400'}`}>
+                                                    {isSystem ? <Megaphone className="w-3.5 h-3.5" /> : <ClockIcon className="w-4 h-4" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    {isSystem && item.title && (
+                                                        <p className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-0.5">{item.title}</p>
+                                                    )}
+                                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{item.description}</p>
+                                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5 uppercase">
+                                                        {new Date(item.date).toLocaleDateString(language, {timeZone: 'UTC'})}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                            
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDismissNotification(item.id);
+                                                }}
+                                                title={language === 'pt-BR' ? 'Dispensar' : 'Dismiss'}
+                                                className="p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all self-center ml-1 animate-fade-in"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
-                                    </button>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -299,6 +370,52 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {selectedSystemNotif && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 p-6 animate-scale-up">
+                  <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-2.5">
+                          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-lg">
+                              <Megaphone className="w-5 h-5" />
+                          </div>
+                          <div>
+                              <span className="text-[10px] uppercase font-bold tracking-widest text-blue-500 dark:text-blue-400">
+                                  {language === 'pt-BR' ? 'Mensagem do Sistema' : 'System Message'}
+                              </span>
+                              <h3 className="text-lg font-black text-gray-900 dark:text-white mt-0.5 leading-snug">
+                                  {selectedSystemNotif.title || (language === 'pt-BR' ? 'Aviso Importante' : 'Important Announcement')}
+                              </h3>
+                          </div>
+                      </div>
+                      <button 
+                          onClick={() => {
+                              handleDismissNotification(selectedSystemNotif.id);
+                              setSelectedSystemNotif(null);
+                          }}
+                          className="p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-6 whitespace-pre-wrap max-h-64 overflow-y-auto pr-1">
+                      {selectedSystemNotif.description}
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
+                      <span>{new Date(selectedSystemNotif.date).toLocaleDateString(language)}</span>
+                      <button
+                          onClick={() => {
+                              handleDismissNotification(selectedSystemNotif.id);
+                              setSelectedSystemNotif(null);
+                          }}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95"
+                      >
+                          {language === 'pt-BR' ? 'Entendi' : 'Understood'}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
     </header>
   );
 };

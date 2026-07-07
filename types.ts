@@ -125,3 +125,11 @@ export interface User {
   emailNotificationsDaysAndBefore?: number; // e.g. 1, 2, 3 days before
   createdAt?: string;
 }
+
+export interface SystemNotification {
+    id: string;
+    title: string;
+    message: string;
+    userId: string; // 'all' for general, or target userId for specific
+    createdAt: string;
+}

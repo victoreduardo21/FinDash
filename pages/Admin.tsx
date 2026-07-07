@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Plan } from '../types';
+import { User, Plan, SystemNotification } from '../types';
 import { api } from '../services/api';
-import { db } from '../services/firebase';
+import { db, handleFirestoreError, OperationType } from '../services/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import MetricCard from '../components/MetricCard';
 import { UsersIcon } from '../components/icons/UsersIcon';
 import { CheckCircleIcon } from '../components/icons/CheckCircleIcon';
 import { ClockIcon } from '../components/icons/ClockIcon';
 import { DollarSignIcon } from '../components/icons/DollarSignIcon';
-import { Download, X, Info, Briefcase, MapPin, HelpCircle, CreditCard as CreditCardIcon, Calendar } from 'lucide-react';
+import { Download, X, Info, Briefcase, MapPin, HelpCircle, CreditCard as CreditCardIcon, Calendar, Send, Megaphone, Trash2, Mail } from 'lucide-react';
 
 const PLAN_PRICES = {
     FREE: { MONTHLY: 0, ANNUAL: 0 },
@@ -17,11 +17,30 @@ const PLAN_PRICES = {
     VIP: { MONTHLY: 79.90, ANNUAL: 799.90 }
 };
 
-const Admin: React.FC = () => {
+interface AdminProps {
+    token: string;
+}
+
+const Admin: React.FC<AdminProps> = ({ token }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    // Messaging & Alerts States
+    const [sentNotifications, setSentNotifications] = useState<SystemNotification[]>([]);
+    const [activeTab, setActiveTab] = useState<'users' | 'messages'>('users');
+    const [msgTarget, setMsgTarget] = useState<string>('all'); // 'all' or specific userId
+    const [msgTitle, setMsgTitle] = useState<string>('');
+    const [msgBody, setMsgBody] = useState<string>('');
+    const [isSending, setIsSending] = useState(false);
+    
+    // Quick send inside modal
+    const [quickMsg, setQuickMsg] = useState('');
+    const [isSendingQuick, setIsSendingQuick] = useState(false);
+    
+    // Message toast/status
+    const [adminToast, setAdminToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     const stats = useMemo(() => {
         const activeUsers = users.filter(u => u.subscriptionStatus === 'ACTIVE');
@@ -52,12 +71,85 @@ const Admin: React.FC = () => {
             setUsers(processedUsers);
             setIsLoading(false);
         }, (error) => {
-            console.error("Erro ao carregar usuários:", error);
             setIsLoading(false);
+            handleFirestoreError(error, OperationType.LIST, 'users');
         });
 
-        return () => unsubscribe();
+        const qNotif = query(collection(db, 'notifications'));
+        const unsubscribeNotifs = onSnapshot(qNotif, (snap) => {
+            setSentNotifications(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as SystemNotification)));
+        }, (error) => {
+            handleFirestoreError(error, OperationType.LIST, 'notifications');
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeNotifs();
+        };
     }, []);
+
+    useEffect(() => {
+        if (adminToast) {
+            const timer = setTimeout(() => setAdminToast(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [adminToast]);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!msgTitle.trim() || !msgBody.trim()) {
+            setAdminToast({ message: "Preencha todos os campos obrigatórios.", type: 'error' });
+            return;
+        }
+        setIsSending(true);
+        try {
+            await api.createNotification({
+                title: msgTitle.trim(),
+                message: msgBody.trim(),
+                userId: msgTarget,
+                createdAt: new Date().toISOString()
+            }, token);
+            setMsgTitle('');
+            setMsgBody('');
+            setAdminToast({ message: "Mensagem enviada com sucesso!", type: 'success' });
+        } catch (error) {
+            console.error("Erro ao enviar comunicado:", error);
+            setAdminToast({ message: "Erro ao enviar comunicado.", type: 'error' });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const handleSendQuickMessage = async () => {
+        if (!quickMsg.trim() || !selectedUser) return;
+        setIsSendingQuick(true);
+        try {
+            await api.createNotification({
+                title: "Mensagem Direta",
+                message: quickMsg.trim(),
+                userId: selectedUser.id!,
+                createdAt: new Date().toISOString()
+            }, token);
+            setQuickMsg('');
+            setAdminToast({ message: `Mensagem enviada para ${selectedUser.name}!`, type: 'success' });
+        } catch (error) {
+            console.error("Erro ao enviar mensagem direta:", error);
+            setAdminToast({ message: "Erro ao enviar mensagem direta.", type: 'error' });
+        } finally {
+            setIsSendingQuick(false);
+        }
+    };
+
+    const handleDeleteNotification = async (notifId: string) => {
+        if (!window.confirm("Deseja realmente apagar esta mensagem? Ela desaparecerá do sininho dos usuários.")) return;
+        try {
+            await api.deleteNotification(notifId, token);
+            setAdminToast({ message: "Mensagem apagada com sucesso!", type: 'success' });
+        } catch (error) {
+            console.error("Erro ao apagar mensagem:", error);
+            setAdminToast({ message: "Erro ao apagar mensagem.", type: 'error' });
+        }
+    };
 
     const handleUpdatePlan = async (userId: string, newPlan: Plan) => {
         setUpdatingUserId(userId);
@@ -208,108 +300,281 @@ const Admin: React.FC = () => {
                 />
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-gray-700">
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Usuário</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Permissão</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contato</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Abertura</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Plano</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {users.map((user) => (
-                                <tr 
-                                    key={user.id} 
-                                    onClick={() => setSelectedUser(user)}
-                                    className="hover:bg-blue-50/40 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-                                >
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs mr-3">
-                                                {user.name?.charAt(0) || '?'}
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name || 'Sem nome'}</div>
-                                                <div className="text-xs text-gray-500">{user.email}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-xs font-medium ${user.role === 'admin' ? 'text-purple-600' : 'text-gray-600'}`}>
-                                            {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                        {user.phone ? (
-                                            <a 
-                                                href={`https://wa.me/${user.phone.replace(/\D/g, '')}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="text-xs font-medium text-green-600 hover:text-green-500 flex items-center gap-1"
-                                            >
-                                                {user.phone}
-                                                {user.phoneVerified && (
-                                                    <span className="bg-green-100 text-green-700 px-1 rounded-sm text-[8px] font-black uppercase">Ok</span>
-                                                )}
-                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                            </a>
-                                        ) : (
-                                            <span className="text-xs text-gray-400 italic">Não informado</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '--/--/----'}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center gap-2">
-                                            <select 
-                                                value={user.plan} 
-                                                onChange={(e) => handleUpdatePlan(user.id!, e.target.value as Plan)}
-                                                disabled={updatingUserId === user.id}
-                                                className="text-xs font-bold bg-gray-100 dark:bg-slate-700 border-none rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
-                                            >
-                                                <option value="FREE">FREE</option>
-                                                <option value="PRO">PRO</option>
-                                                <option value="VIP">VIP</option>
-                                            </select>
-                                            <span className="text-[10px] font-medium text-gray-500 whitespace-nowrap">
-                                                R$ {PLAN_PRICES[user.plan || 'FREE'][user.billingCycle || 'MONTHLY'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                            user.subscriptionStatus === 'ACTIVE' 
-                                            ? 'bg-green-100 text-green-700' 
-                                            : user.subscriptionStatus === 'PENDING'
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-red-100 text-red-700'
-                                        }`}>
-                                            {user.subscriptionStatus || 'INACTIVE'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                        <button 
-                                            onClick={() => handleToggleStatus(user.email, user.subscriptionStatus || 'INACTIVE')}
-                                            className="text-xs font-bold text-blue-600 hover:text-blue-500 transition-colors"
-                                        >
-                                            {user.subscriptionStatus === 'PENDING' ? 'Aprovar' : (user.subscriptionStatus === 'ACTIVE' ? 'Desativar' : 'Ativar')}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            {/* Tab switch buttons */}
+            <div className="flex border-b border-gray-150 dark:border-gray-800 gap-6 pb-px">
+                <button
+                    onClick={() => setActiveTab('users')}
+                    className={`pb-3 text-sm font-black uppercase tracking-wider transition-all relative flex items-center gap-2 ${
+                        activeTab === 'users' 
+                            ? 'text-blue-600 dark:text-blue-400' 
+                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    }`}
+                >
+                    <UsersIcon className="h-4 w-4" />
+                    Usuários Cadastrados
+                    {activeTab === 'users' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab('messages')}
+                    className={`pb-3 text-sm font-black uppercase tracking-wider transition-all relative flex items-center gap-2 ${
+                        activeTab === 'messages' 
+                            ? 'text-blue-600 dark:text-blue-400' 
+                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    }`}
+                >
+                    <Megaphone className="h-4 w-4" />
+                    Mural de Comunicados / Alertas
+                    {activeTab === 'messages' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />}
+                </button>
             </div>
+
+            {/* Admin Toast Alerts */}
+            {adminToast && (
+                <div className={`p-4 rounded-xl flex items-center justify-between shadow-md border animate-fade-in ${
+                    adminToast.type === 'success' 
+                        ? 'bg-emerald-50 border-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-300' 
+                        : 'bg-rose-50 border-rose-100 text-rose-800 dark:bg-rose-950/20 dark:border-rose-900 dark:text-rose-300'
+                }`}>
+                    <div className="flex items-center gap-2">
+                        <Info size={16} />
+                        <span className="text-xs font-bold">{adminToast.message}</span>
+                    </div>
+                    <button onClick={() => setAdminToast(null)} className="p-1 hover:opacity-80">
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
+            {activeTab === 'users' && (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-gray-700">
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Usuário</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Permissão</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contato</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Abertura</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Plano</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {users.map((user) => (
+                                    <tr 
+                                        key={user.id} 
+                                        onClick={() => setSelectedUser(user)}
+                                        className="hover:bg-blue-50/40 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center">
+                                                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs mr-3">
+                                                    {user.name?.charAt(0) || '?'}
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name || 'Sem nome'}</div>
+                                                    <div className="text-xs text-gray-500">{user.email}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-xs font-medium ${user.role === 'admin' ? 'text-purple-600' : 'text-gray-600'}`}>
+                                                {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                            {user.phone ? (
+                                                <a 
+                                                    href={`https://wa.me/${user.phone.replace(/\D/g, '')}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs font-medium text-green-600 hover:text-green-500 flex items-center gap-1"
+                                                >
+                                                    {user.phone}
+                                                    {user.phoneVerified && (
+                                                        <span className="bg-green-100 text-green-700 px-1 rounded-sm text-[8px] font-black uppercase">Ok</span>
+                                                    )}
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">Não informado</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '--/--/----'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-2">
+                                                <select 
+                                                    value={user.plan} 
+                                                    onChange={(e) => handleUpdatePlan(user.id!, e.target.value as Plan)}
+                                                    disabled={updatingUserId === user.id}
+                                                    className="text-xs font-bold bg-gray-100 dark:bg-slate-700 border-none rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                                                >
+                                                    <option value="FREE">FREE</option>
+                                                    <option value="PRO">PRO</option>
+                                                    <option value="VIP">VIP</option>
+                                                </select>
+                                                <span className="text-[10px] font-medium text-gray-500 whitespace-nowrap">
+                                                    R$ {PLAN_PRICES[user.plan || 'FREE'][user.billingCycle || 'MONTHLY'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                user.subscriptionStatus === 'ACTIVE' 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : user.subscriptionStatus === 'PENDING'
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-red-100 text-red-700'
+                                            }`}>
+                                                {user.subscriptionStatus || 'INACTIVE'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                onClick={() => handleToggleStatus(user.email, user.subscriptionStatus || 'INACTIVE')}
+                                                className="text-xs font-bold text-blue-600 hover:text-blue-500 transition-colors"
+                                            >
+                                                {user.subscriptionStatus === 'PENDING' ? 'Aprovar' : (user.subscriptionStatus === 'ACTIVE' ? 'Desativar' : 'Ativar')}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'messages' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+                    {/* Form de Envio */}
+                    <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 h-fit space-y-4">
+                        <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-3">
+                            <Send className="w-5 h-5 text-blue-500" />
+                            <h3 className="text-sm font-black uppercase tracking-wider text-gray-800 dark:text-white">
+                                Enviar Comunicado
+                            </h3>
+                        </div>
+                        <form onSubmit={handleSendMessage} className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                                    Destinatário
+                                </label>
+                                <select
+                                    value={msgTarget}
+                                    onChange={(e) => setMsgTarget(e.target.value)}
+                                    className="w-full text-xs font-bold bg-gray-50 dark:bg-slate-900 border border-gray-150 dark:border-slate-750 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all dark:text-white"
+                                >
+                                    <option value="all">📢 Todos os Usuários (Comunicado Geral)</option>
+                                    <optgroup label="👤 Usuário Específico">
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.name || 'Sem nome'} ({u.email})
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                                    Título do Alerta
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={msgTitle}
+                                    onChange={(e) => setMsgTitle(e.target.value)}
+                                    placeholder="Ex: Atualização Importante do Sistema"
+                                    className="w-full text-xs font-bold bg-gray-50 dark:bg-slate-900 border border-gray-150 dark:border-slate-750 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-gray-400 dark:text-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                                    Mensagem / Conteúdo
+                                </label>
+                                <textarea
+                                    required
+                                    rows={5}
+                                    value={msgBody}
+                                    onChange={(e) => setMsgBody(e.target.value)}
+                                    placeholder="Escreva o conteúdo que aparecerá na notificação..."
+                                    className="w-full text-xs font-medium bg-gray-50 dark:bg-slate-900 border border-gray-150 dark:border-slate-750 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-gray-400 dark:text-white leading-relaxed resize-none"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSending}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-200 dark:shadow-none transition-all transform active:scale-95"
+                            >
+                                <Send size={14} />
+                                {isSending ? 'Enviando...' : 'Enviar Alerta'}
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* Histórico de Comunicados */}
+                    <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+                        <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-3">
+                            <Megaphone className="w-5 h-5 text-indigo-500" />
+                            <h3 className="text-sm font-black uppercase tracking-wider text-gray-800 dark:text-white">
+                                Histórico de Envios
+                            </h3>
+                        </div>
+                        {sentNotifications.length === 0 ? (
+                            <div className="p-12 text-center text-gray-450 dark:text-gray-500 text-xs italic">
+                                Nenhum comunicado ou alerta enviado até o momento.
+                            </div>
+                        ) : (
+                            <div className="space-y-3.5 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
+                                {[...sentNotifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(notif => {
+                                    const targetUser = users.find(u => u.id === notif.userId);
+                                    return (
+                                        <div key={notif.id} className="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4">
+                                            <div className="space-y-1 flex-1 min-w-0 text-left">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                        notif.userId === 'all' 
+                                                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' 
+                                                            : 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400'
+                                                    }`}>
+                                                        {notif.userId === 'all' 
+                                                            ? '📢 Geral' 
+                                                            : `👤 Privada (${targetUser?.name || 'Carregando...'})`}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">
+                                                        {new Date(notif.createdAt).toLocaleString('pt-BR')}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-sm font-bold text-gray-900 dark:text-white leading-tight mt-1">
+                                                    {notif.title}
+                                                </h4>
+                                                <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                                    {notif.message}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteNotification(notif.id)}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+                                                title="Apagar comunicado"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Modal de Detalhes completos do Usuário */}
             {selectedUser && (
@@ -489,6 +754,35 @@ const Admin: React.FC = () => {
                                         }`}>
                                             {selectedUser.subscriptionStatus || 'INACTIVE'}
                                         </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sessão 6: Enviar Mensagem Direta */}
+                            <div className="space-y-2 border-t border-gray-150 dark:border-gray-850 pt-4 mt-4">
+                                <h4 className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Mail size={13} /> Enviar Mensagem Direta p/ este usuário
+                                </h4>
+                                <div className="space-y-3 bg-blue-50/10 dark:bg-slate-950/20 p-4 rounded-xl border border-blue-100/50 dark:border-gray-800">
+                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">
+                                        Digite abaixo a mensagem que aparecerá imediatamente no sino de notificações dele:
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={quickMsg}
+                                            onChange={(e) => setQuickMsg(e.target.value)}
+                                            placeholder="Ex: Seu plano foi aprovado! Obrigado pelo pagamento."
+                                            className="flex-1 text-xs font-bold bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-750 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-gray-400 dark:text-white"
+                                        />
+                                        <button
+                                            onClick={handleSendQuickMessage}
+                                            disabled={isSendingQuick || !quickMsg.trim()}
+                                            className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-200 dark:shadow-none flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+                                        >
+                                            <Send size={12} />
+                                            {isSendingQuick ? 'Enviando...' : 'Enviar'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>

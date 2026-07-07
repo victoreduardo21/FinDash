@@ -1,5 +1,5 @@
 
-import { User, PersonalTransaction, Investment, CalendarEvent, Plan, BillingCycle, Language, CreditCard, CreditTransaction, Subscription } from '../types';
+import { User, PersonalTransaction, Investment, CalendarEvent, Plan, BillingCycle, Language, CreditCard, CreditTransaction, Subscription, SystemNotification } from '../types';
 import { db, auth } from './firebase';
 import { 
     collection, 
@@ -397,6 +397,24 @@ export const api = {
             return { error: false };
         } catch (error) {
             handleFirestoreError(error, OperationType.DELETE, 'subscriptions/' + id);
+        }
+    },
+    createNotification: async (notification: Omit<SystemNotification, 'id'>, token: string) => {
+        const uid = token || auth.currentUser?.uid;
+        if (!uid) throw new Error("Unauthorized");
+        try {
+            const docRef = await addDoc(collection(db, 'notifications'), { ...notification });
+            return { error: false, id: docRef.id };
+        } catch (error) {
+            handleFirestoreError(error, OperationType.CREATE, 'notifications');
+        }
+    },
+    deleteNotification: async (id: string, token: string) => {
+        try {
+            await deleteDoc(doc(db, 'notifications', id));
+            return { error: false };
+        } catch (error) {
+            handleFirestoreError(error, OperationType.DELETE, 'notifications/' + id);
         }
     }
 };

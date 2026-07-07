@@ -17,9 +17,9 @@ import LandingPage from './pages/LandingPage';
 import TransactionModal from './components/TransactionModal';
 import TransferModal from './components/TransferModal';
 import PlanSelectionModal from './components/PlanSelectionModal';
-import { PersonalTransaction, Investment, User, Page, Theme, CalendarEvent, Plan, BillingCycle, TransactionType, Language, Currency, CreditCard, CreditTransaction, AiConversation, Subscription } from './types';
+import { PersonalTransaction, Investment, User, Page, Theme, CalendarEvent, Plan, BillingCycle, TransactionType, Language, Currency, CreditCard, CreditTransaction, AiConversation, Subscription, SystemNotification } from './types';
 import { api } from './services/api';
-import { auth, db } from './services/firebase';
+import { auth, db, handleFirestoreError, OperationType } from './services/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot, getDocFromServer, doc, getDoc } from 'firebase/firestore';
 import WhatsAppButton from './components/WhatsAppButton';
@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
   const [aiConversation, setAiConversation] = useState<AiConversation | null>(null);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'pt-BR');
@@ -138,6 +139,7 @@ const App: React.FC = () => {
         setCreditCards([]);
         setCreditTransactions([]);
         setSubscriptions([]);
+        setSystemNotifications([]);
       }
       setIsAuthReady(true);
     });
@@ -156,6 +158,7 @@ const App: React.FC = () => {
             setTasks([]);
             setCreditCards([]);
             setCreditTransactions([]);
+            setSystemNotifications([]);
         }
         return;
     };
@@ -172,42 +175,49 @@ const App: React.FC = () => {
       });
       setTransactions(sorted);
     }, (error) => {
-      console.error("Error fetching transactions:", error);
+      handleFirestoreError(error, OperationType.LIST, 'transactions');
     });
 
     const qI = query(collection(db, 'investments'), where('userId', '==', token));
     const unsubI = onSnapshot(qI, (snap) => {
       setInvestments(snap.docs.map(d => ({ ...d.data(), id: d.id } as Investment)));
     }, (error) => {
-      console.error("Error fetching investments:", error);
+      handleFirestoreError(error, OperationType.LIST, 'investments');
     });
 
     const qC = query(collection(db, 'calendar'), where('userId', '==', token));
     const unsubC = onSnapshot(qC, (snap) => {
       setTasks(snap.docs.map(d => ({ ...d.data(), id: d.id } as CalendarEvent)));
     }, (error) => {
-      console.error("Error fetching tasks:", error);
+      handleFirestoreError(error, OperationType.LIST, 'calendar');
     });
 
     const qCC = query(collection(db, 'credit_cards'), where('userId', '==', token));
     const unsubCC = onSnapshot(qCC, (snap) => {
       setCreditCards(snap.docs.map(d => ({ ...d.data(), id: d.id } as CreditCard)));
     }, (error) => {
-      console.error("Error fetching credit cards:", error);
+      handleFirestoreError(error, OperationType.LIST, 'credit_cards');
     });
 
     const qCT = query(collection(db, 'credit_transactions'), where('userId', '==', token));
     const unsubCT = onSnapshot(qCT, (snap) => {
       setCreditTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id } as CreditTransaction)));
     }, (error) => {
-      console.error("Error fetching credit transactions:", error);
+      handleFirestoreError(error, OperationType.LIST, 'credit_transactions');
     });
 
     const qSub = query(collection(db, 'subscriptions'), where('userId', '==', token));
     const unsubSub = onSnapshot(qSub, (snap) => {
       setSubscriptions(snap.docs.map(d => ({ ...d.data(), id: d.id } as Subscription)));
     }, (error) => {
-      console.error("Error fetching subscriptions:", error);
+      handleFirestoreError(error, OperationType.LIST, 'subscriptions');
+    });
+
+    const qNotif = query(collection(db, 'notifications'), where('userId', 'in', ['all', token]));
+    const unsubNotif = onSnapshot(qNotif, (snap) => {
+      setSystemNotifications(snap.docs.map(d => ({ ...d.data(), id: d.id } as SystemNotification)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'notifications');
     });
 
     const unsubAI = onSnapshot(doc(db, 'ai_conversations', token), (snap) => {
@@ -217,7 +227,7 @@ const App: React.FC = () => {
         setAiConversation(null);
       }
     }, (error) => {
-      console.error("Error fetching AI conversation:", error);
+      handleFirestoreError(error, OperationType.GET, `ai_conversations/${token}`);
     });
 
     return () => {
@@ -228,6 +238,7 @@ const App: React.FC = () => {
       unsubCT();
       unsubSub();
       unsubAI();
+      unsubNotif();
     };
   }, [token, isAuthReady]);
 
@@ -323,6 +334,7 @@ const App: React.FC = () => {
             creditCards={creditCards}
             creditTransactions={creditTransactions}
             onStartTour={handleStartTour}
+            systemNotifications={systemNotifications}
         />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-6 lg:p-8 pb-28 md:pb-8 no-scrollbar max-w-full">
@@ -394,7 +406,7 @@ const App: React.FC = () => {
             {activePage === 'Créditos' && <Credits creditCards={creditCards} creditTransactions={creditTransactions} language={language} selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} token={token || ''} currentUser={currentUser} />}
             {activePage === 'Assinaturas' && <Subscriptions subscriptions={subscriptions} language={language} selectedCurrency={selectedCurrency} token={token || ''} />}
             {activePage === 'Configurações' && currentUser && <Settings theme={theme} setTheme={setTheme} currentUser={currentUser} onUpdatePassword={async (c, n) => { await api.updatePassword({currentPassword: c, newPassword: n}, token); }} onUpdateAvatar={async (a) => { await api.updateAvatar({avatar: a}, token); }} onCreateUser={async (u) => { const r = await api.createUser(u); return r; }} language={language} onLanguageChange={setLanguage} />}
-            {activePage === 'Admin' && (currentUser?.role === 'admin' || currentUser?.email === 'eduardopontesdias@outlook.com' || currentUser?.email === 'gtsglobaltech01@gmail.com') && <Admin />}
+            {activePage === 'Admin' && (currentUser?.role === 'admin' || currentUser?.email === 'eduardopontesdias@outlook.com' || currentUser?.email === 'gtsglobaltech01@gmail.com') && <Admin token={token || ''} />}
         </main>
       </div>
 

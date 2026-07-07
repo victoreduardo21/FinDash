@@ -90,6 +90,18 @@
         "isOverdraft": { "type": "boolean" }
       },
       "required": ["cardId", "description", "amount", "totalInstallments", "date", "userId"]
+    },
+    "SystemNotification": {
+      "title": "SystemNotification",
+      "description": "System notification or direct message from admin",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "userId", "createdAt"]
     }
   },
   "firestore": {
@@ -120,6 +132,10 @@
     "/ai_conversations/{convId}": {
       "schema": "AiConversation",
       "description": "Persisted AI chat history"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "SystemNotification",
+      "description": "Announcements and direct messages from admin"
     }
   }
 }
