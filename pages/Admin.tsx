@@ -17,6 +17,43 @@ const PLAN_PRICES = {
     VIP: { MONTHLY: 79.90, ANNUAL: 799.90 }
 };
 
+const getFormattedDuration = (createdAtStr: string | undefined): string => {
+    if (!createdAtStr) return 'Não informado';
+    try {
+        const createdDate = new Date(createdAtStr);
+        const now = new Date();
+        const diffTime = now.getTime() - createdDate.getTime();
+        if (diffTime < 0) return 'Recente';
+        
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 1) {
+            return 'Criado hoje';
+        }
+        if (diffDays < 30) {
+            return `${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+        }
+        
+        const diffMonths = Math.floor(diffDays / 30);
+        if (diffMonths < 12) {
+            const remainingDays = diffDays % 30;
+            if (remainingDays === 0) {
+                return `${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'}`;
+            }
+            return `${diffMonths} ${diffMonths === 1 ? 'mês' : 'meses'} e ${remainingDays} ${remainingDays === 1 ? 'dia' : 'dias'}`;
+        }
+        
+        const diffYears = Math.floor(diffMonths / 12);
+        const remainingMonths = diffMonths % 12;
+        if (remainingMonths === 0) {
+            return `${diffYears} ${diffYears === 1 ? 'ano' : 'anos'}`;
+        }
+        return `${diffYears} ${diffYears === 1 ? 'ano' : 'anos'} e ${remainingMonths} ${remainingMonths === 1 ? 'mês' : 'meses'}`;
+    } catch (e) {
+        return '';
+    }
+};
+
 interface AdminProps {
     token: string;
 }
@@ -402,9 +439,14 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                            <div className="text-xs font-semibold text-gray-900 dark:text-white">
                                                 {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '--/--/----'}
                                             </div>
+                                            {user.createdAt && (
+                                                <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                                    {getFormattedDuration(user.createdAt)}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center gap-2">
@@ -741,6 +783,12 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
                                         <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
                                             <Calendar size={11} />
                                             {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('pt-BR') : '--/--/----'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase">Tempo de Conta</p>
+                                        <p className="font-semibold text-blue-600 dark:text-blue-400">
+                                            {getFormattedDuration(selectedUser.createdAt)}
                                         </p>
                                     </div>
                                     <div>
