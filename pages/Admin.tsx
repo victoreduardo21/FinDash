@@ -54,6 +54,20 @@ const getFormattedDuration = (createdAtStr: string | undefined): string => {
     }
 };
 
+const getWhatsAppUrl = (phone: string | undefined, message: string): string => {
+    if (!phone) return '';
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10 || cleaned.length === 11) {
+        cleaned = '55' + cleaned;
+    }
+    return `https://api.whatsapp.com/send?phone=${cleaned}&text=${encodeURIComponent(message)}`;
+};
+
+const getEmailMailtoUrl = (email: string | undefined, message: string): string => {
+    if (!email) return '';
+    return `mailto:${email}?subject=${encodeURIComponent('Notificação Money Dashs')}&body=${encodeURIComponent(message)}`;
+};
+
 interface AdminProps {
     token: string;
 }
@@ -832,11 +846,11 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
                             {/* Sessão 6: Enviar Mensagem Direta */}
                             <div className="space-y-2 border-t border-gray-150 dark:border-gray-850 pt-4 mt-4">
                                 <h4 className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
-                                    <Mail size={13} /> Enviar Mensagem Direta p/ este usuário
+                                    <Mail size={13} /> Enviar Mensagem / Comunicado Direto
                                 </h4>
                                 <div className="space-y-3 bg-blue-50/10 dark:bg-slate-950/20 p-4 rounded-xl border border-blue-100/50 dark:border-gray-800">
                                     <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">
-                                        Digite abaixo a mensagem que aparecerá imediatamente no sino de notificações dele:
+                                        Escreva a mensagem abaixo para enviar pelos canais de comunicação disponíveis:
                                     </p>
                                     <div className="flex gap-2">
                                         <input
@@ -850,10 +864,57 @@ const Admin: React.FC<AdminProps> = ({ token }) => {
                                             onClick={handleSendQuickMessage}
                                             disabled={isSendingQuick || !quickMsg.trim()}
                                             className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-200 dark:shadow-none flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+                                            title="Enviar para o Sino de Notificações interno do usuário"
                                         >
                                             <Send size={12} />
-                                            {isSendingQuick ? 'Enviando...' : 'Enviar'}
+                                            {isSendingQuick ? 'Sino...' : 'Enviar no Sino 🔔'}
                                         </button>
+                                    </div>
+
+                                    {/* Canais Externos de Notificação */}
+                                    <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-dashed border-gray-200 dark:border-gray-800">
+                                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mr-1">
+                                            Canais Externos:
+                                        </span>
+                                        
+                                        {selectedUser.phone ? (
+                                            <a
+                                                href={getWhatsAppUrl(selectedUser.phone, quickMsg || `Olá ${selectedUser.name || ''}, temos um aviso para você no Money Dashs!`)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 active:scale-95 shadow-sm shadow-emerald-100 dark:shadow-none"
+                                            >
+                                                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.847.001-2.63-1.019-5.101-2.871-6.955C16.61 1.988 14.138.966 11.517.966c-5.44 0-9.866 4.415-9.869 9.851-.001 1.77.46 3.49 1.334 5.01L1.97 21.6l5.961-1.561-.284-.173zm10.93-7.534c-.312-.156-1.847-.912-2.128-1.012-.282-.101-.487-.152-.692.156-.204.307-.791.101-.97.101-.178-.204-.356-.511-.356-.511s-.11-.233-.217-.468c-.1-.235-.001-.433.05-.536.05-.101.101-.204.152-.307l.454-.761c.051-.101.026-.204-.012-.293-.039-.089-.344-.83-.472-1.139-.125-.303-.253-.261-.347-.266-.09-.004-.193-.005-.297-.005s-.273.039-.416.195c-.143.156-.547.534-.547 1.302 0 .767.559 1.508.637 1.613.078.104 1.1 1.68 2.664 2.356.372.161.662.257.889.33.374.119.714.102.983.062.3-.045.912-.373 1.04-.733.127-.36.127-.669.088-.733-.038-.063-.142-.101-.454-.258z"/>
+                                                </svg>
+                                                Enviar p/ WhatsApp 💬
+                                            </a>
+                                        ) : (
+                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold italic">
+                                                (Sem Telefone p/ Zap 🚫)
+                                            </span>
+                                        )}
+
+                                        <a
+                                            href={getEmailMailtoUrl(selectedUser.email, quickMsg || `Olá ${selectedUser.name || ''}, temos um aviso para você no Money Dashs!`)}
+                                            className="px-3 py-1.5 bg-blue-100 dark:bg-slate-800 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-slate-750 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 active:scale-95"
+                                        >
+                                            <Mail size={12} />
+                                            Enviar p/ E-mail ✉️
+                                        </a>
+                                    </div>
+
+                                    {/* Nota Explicativa sobre Automação em Segundo Plano */}
+                                    <div className="mt-2.5 p-2.5 bg-gray-50/50 dark:bg-slate-900/60 rounded-lg border border-gray-150 dark:border-gray-800/60 text-[10px] text-gray-500 dark:text-gray-400 leading-normal space-y-1">
+                                        <p className="font-bold text-gray-700 dark:text-gray-300">
+                                            💡 Deseja enviar mensagens automáticas em 2º plano (sem precisar abrir o WhatsApp ou e-mail)?
+                                        </p>
+                                        <p>
+                                            • <strong>E-mail Automático:</strong> É possível configurar no Firebase instalando a extensão oficial <em>"Trigger Email from Firestore"</em> que dispara e-mails usando SendGrid ou Resend sempre que gravamos uma notificação.
+                                        </p>
+                                        <p>
+                                            • <strong>WhatsApp Automático:</strong> Exige contratar um gateway de WhatsApp API (como Z-API ou Evolution API). Informando as credenciais, nós criamos o disparo direto em 2º plano.
+                                        </p>
                                     </div>
                                 </div>
                             </div>

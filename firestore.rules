@@ -35,9 +35,9 @@ service cloud.firestore {
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.email is string && data.email.matches('^.+@.+$') &&
              data.plan in ['FREE', 'PRO', 'VIP'] &&
-             (data.phone == null || (data.phone is string && data.phone.size() < 20)) &&
-             (data.cpf == null || (data.cpf is string && data.cpf.size() < 20)) &&
-             (data.overdraftLimit == null || data.overdraftLimit is number);
+             (data.get('phone', null) == null || (data.get('phone', null) is string && data.get('phone', null).size() < 20)) &&
+             (data.get('cpf', null) == null || (data.get('cpf', null) is string && data.get('cpf', null).size() < 20)) &&
+             (data.get('overdraftLimit', null) == null || data.get('overdraftLimit', null) is number);
     }
     
     function isValidTransaction(data) {
@@ -71,8 +71,8 @@ service cloud.firestore {
       return data.keys().hasAll(['name', 'limit', 'closingDay', 'dueDay', 'currency', 'userId']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.limit is number &&
-             data.closingDay is int && data.closingDay >= 1 && data.closingDay <= 31 &&
-             data.dueDay is int && data.dueDay >= 1 && data.dueDay <= 31 &&
+             data.closingDay is number && data.closingDay >= 1 && data.closingDay <= 31 &&
+             data.dueDay is number && data.dueDay >= 1 && data.dueDay <= 31 &&
              data.currency in ['BRL', 'USD'] &&
              data.userId == request.auth.uid;
     }
@@ -81,10 +81,10 @@ service cloud.firestore {
       return data.keys().hasAll(['cardId', 'description', 'amount', 'totalInstallments', 'date', 'userId', 'category']) &&
              data.description is string && data.description.size() > 0 && data.description.size() < 255 &&
              data.amount is number &&
-             data.totalInstallments is int &&
+             data.totalInstallments is number &&
              data.category is string &&
-             (data.status == null || data.status in ['PENDING', 'PAID']) &&
-             (data.paymentDate == null || data.paymentDate is string) &&
+             (data.get('status', null) == null || data.get('status', null) in ['PENDING', 'PAID']) &&
+             (data.get('paymentDate', null) == null || data.get('paymentDate', null) is string) &&
              data.userId == request.auth.uid;
     }
 
@@ -99,7 +99,7 @@ service cloud.firestore {
              data.description is string && data.description.size() > 0 &&
              data.amount is number &&
              data.currency in ['BRL', 'USD'] &&
-             data.dueDay is int && data.dueDay >= 1 && data.dueDay <= 31 &&
+             data.dueDay is number && data.dueDay >= 1 && data.dueDay <= 31 &&
              data.status in ['ACTIVE', 'PAUSED'] &&
              data.userId == request.auth.uid;
     }

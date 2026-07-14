@@ -53,6 +53,7 @@ const Credits: React.FC<CreditsProps> = ({
     const [isOverdraftModalOpen, setIsOverdraftModalOpen] = useState(false);
     
     // New Card Form
+    const [editingCardId, setEditingCardId] = useState<string | null>(null);
     const [cardName, setCardName] = useState('');
     const [cardLimit, setCardLimit] = useState('');
     const [closingDay, setClosingDay] = useState('10');
@@ -111,6 +112,7 @@ const Credits: React.FC<CreditsProps> = ({
         if (!cardName || !cardLimit) return;
         try {
             await api.createCreditCard({
+                id: editingCardId || undefined,
                 name: cardName,
                 limit: parseFloat(cardLimit),
                 closingDay: parseInt(closingDay),
@@ -118,11 +120,30 @@ const Credits: React.FC<CreditsProps> = ({
                 currency: selectedCurrency
             }, token);
             setIsCardModalOpen(false);
+            setEditingCardId(null);
             setCardName('');
             setCardLimit('');
         } catch (err) {
             console.error("Error saving card:", err);
         }
+    };
+
+    const handleOpenNewCard = () => {
+        setEditingCardId(null);
+        setCardName('');
+        setCardLimit('');
+        setClosingDay('10');
+        setDueDay('15');
+        setIsCardModalOpen(true);
+    };
+
+    const handleOpenEditCard = (card: CreditCard) => {
+        setEditingCardId(card.id);
+        setCardName(card.name);
+        setCardLimit(card.limit.toString());
+        setClosingDay(card.closingDay.toString());
+        setDueDay(card.dueDay.toString());
+        setIsCardModalOpen(true);
     };
 
     const handleCardSelection = (cardId: string) => {
@@ -306,7 +327,7 @@ const Credits: React.FC<CreditsProps> = ({
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
-                        onClick={() => setIsCardModalOpen(true)}
+                        onClick={handleOpenNewCard}
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 font-bold hover:bg-gray-50 dark:hover:bg-slate-700 transition-all shadow-sm text-sm"
                     >
                         <Plus size={18} /> {t('newCard')}
@@ -383,9 +404,22 @@ const Credits: React.FC<CreditsProps> = ({
                                             </div>
                                             <h3 className="font-bold text-gray-900 dark:text-white truncate max-w-[120px]">{card.name}</h3>
                                         </div>
-                                        <button onClick={() => handleDeleteCard(card.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => handleOpenEditCard(card)} 
+                                                className="text-gray-300 hover:text-blue-500 transition-colors"
+                                                title={language === 'pt-BR' ? 'Editar cartão' : 'Edit card'}
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteCard(card.id)} 
+                                                className="text-gray-300 hover:text-red-500 transition-colors"
+                                                title={language === 'pt-BR' ? 'Excluir cartão' : 'Delete card'}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -506,7 +540,11 @@ const Credits: React.FC<CreditsProps> = ({
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCardModalOpen(false)}></div>
                     <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6">{t('newCard')}</h2>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6">
+                            {editingCardId 
+                                ? (language === 'pt-BR' ? 'Editar Cartão' : 'Edit Credit Card') 
+                                : t('newCard')}
+                        </h2>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">{t('cardName')}</label>
