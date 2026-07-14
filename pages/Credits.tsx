@@ -68,7 +68,10 @@ const Credits: React.FC<CreditsProps> = ({
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
     const [installments, setInstallments] = useState('1');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
     const [isOverdraft, setIsOverdraft] = useState(false);
     const [category, setCategory] = useState(language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0]);
 
@@ -176,7 +179,10 @@ const Credits: React.FC<CreditsProps> = ({
         setDescription('');
         setAmount('');
         setInstallments('1');
-        setDate(new Date().toISOString().split('T')[0]);
+        setDate(() => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        });
         setIsOverdraft(false);
         setCategory(language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0]);
         setIsTransactionModalOpen(true);
@@ -280,13 +286,17 @@ const Credits: React.FC<CreditsProps> = ({
 
     const handlePayNow = async (tx: CreditTransaction) => {
         if (!token) return;
+        const localToday = (() => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
         try {
             // 1. Criar transação real de despesa (sai da conta)
             await api.createTransaction({
                 description: `PGTO: ${tx.description}`,
                 amount: tx.amount,
                 currency: selectedCurrency,
-                date: new Date().toISOString().split('T')[0],
+                date: localToday,
                 type: TransactionType.Despesa,
                 category: tx.category || 'Pagamento'
             }, token);
@@ -295,7 +305,7 @@ const Credits: React.FC<CreditsProps> = ({
             await api.createCreditTransaction({
                 ...tx,
                 status: 'PAID',
-                paymentDate: new Date().toISOString().split('T')[0]
+                paymentDate: localToday
             }, token);
 
             alert('Pagamento realizado e registrado nas suas despesas!');

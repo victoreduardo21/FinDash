@@ -45,7 +45,10 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
     const [amount, setAmount] = useState('');
     const [dueDay, setDueDay] = useState('10');
     const [category, setCategory] = useState(language === 'pt-BR' ? CATEGORIES_PT[0] : CATEGORIES_EN[0]);
-    const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
 
     const categories = language === 'pt-BR' ? CATEGORIES_PT : CATEGORIES_EN;
 
@@ -58,6 +61,10 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
 
     const handleSave = async () => {
         if (!description || !amount) return;
+        const localToday = (() => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
         try {
             await api.createSubscription({
                 description,
@@ -66,12 +73,12 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({
                 dueDay: parseInt(dueDay),
                 category,
                 status: 'ACTIVE',
-                startDate: startDate || new Date().toISOString().slice(0, 10)
+                startDate: startDate || localToday
             }, token);
             setIsModalOpen(false);
             setDescription('');
             setAmount('');
-            setStartDate(new Date().toISOString().slice(0, 10));
+            setStartDate(localToday);
         } catch (err) {
             console.error("Error saving subscription:", err);
         }

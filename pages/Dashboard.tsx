@@ -45,7 +45,10 @@ const Dashboard: React.FC<DashboardProps> = ({
     onCurrencyChange 
 }) => {
   const t = useTranslation(language);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
   const monthInputRef = useRef<HTMLInputElement>(null);
 
   const formatCurrency = (value: number, currency: Currency = selectedCurrency) => {

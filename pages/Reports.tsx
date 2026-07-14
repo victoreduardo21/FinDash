@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useRef } from 'react';
-import { PersonalTransaction, TransactionType, Currency, Language, Investment, CreditTransaction } from '../types';
+import { PersonalTransaction, TransactionType, Currency, Language, Investment, CreditTransaction, Subscription } from '../types';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ArrowDownIcon } from '../components/icons/ArrowDownIcon';
 import { ArrowUpIcon } from '../components/icons/ArrowUpIcon';
@@ -14,6 +14,7 @@ interface ReportsProps {
     transactions: PersonalTransaction[];
     creditTransactions: CreditTransaction[];
     investments: Investment[];
+    subscriptions?: Subscription[];
     language: Language;
     selectedCurrency: Currency;
     onCurrencyChange: (currency: Currency) => void;
@@ -24,9 +25,12 @@ const COLOR_DESPESA = '#EF4444';
 const COLOR_APORTE = '#6366F1';
 const COLOR_SALDO = '#3B82F6';
 
-const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = [], investments, language, selectedCurrency, onCurrencyChange }) => {
+const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = [], investments, subscriptions = [], language, selectedCurrency, onCurrencyChange }) => {
     const t = useTranslation(language);
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
     const monthInputRef = useRef<HTMLInputElement>(null);
 
     const formatCurrency = (value: number) => {
@@ -87,7 +91,18 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
             .filter(ctx => ctx.date.startsWith(selectedMonth) && ctx.status !== 'PAID')
             .reduce((acc, ctx) => acc + (Number(ctx.amount) || 0), 0);
         
-        despReal += pendingCreditMonth;
+        const subsTotal = (subscriptions || [])
+            .filter((s: Subscription) => {
+                if (s.status !== 'ACTIVE' || s.currency !== selectedCurrency) return false;
+                if (s.startDate) {
+                    const startMonth = s.startDate.slice(0, 7);
+                    return selectedMonth >= startMonth;
+                }
+                return true;
+            })
+            .reduce((acc: number, s: Subscription) => acc + (Number(s.amount) || 0), 0);
+
+        despReal += pendingCreditMonth + subsTotal;
         
         const saldoTotal = transactions
             .filter(t => (t.currency || 'BRL') === selectedCurrency)
@@ -98,7 +113,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
             .reduce((acc, inv) => acc + (Number(inv.currentValue) || 0), 0);
 
         return { rec, despReal, saldoTotal, patrimonioTotalAtivos };
-    }, [transactions, investments, selectedMonth, selectedCurrency]);
+    }, [transactions, investments, selectedMonth, selectedCurrency, subscriptions]);
 
     const monthlyData = useMemo(() => {
         const months = language === 'pt-BR' 
@@ -149,6 +164,24 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
             }
         });
 
+        // Inclui assinaturas ativas no gráfico de barras/áreas
+        data.forEach((d, monthIndex) => {
+            const mStr = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+            const subsTotalForMonth = (subscriptions || [])
+                .filter((s: Subscription) => {
+                    if (s.status !== 'ACTIVE' || s.currency !== selectedCurrency) return false;
+                    if (s.startDate) {
+                        const startMonth = s.startDate.slice(0, 7);
+                        return mStr >= startMonth;
+                    }
+                    return true;
+                })
+                .reduce((acc: number, s: Subscription) => acc + (Number(s.amount) || 0), 0);
+
+            d.expense += subsTotalForMonth;
+            d.balance -= subsTotalForMonth;
+        });
+
         // Por fim, calculamos o saldo acumulado mês a mês para o gráfico
         return data.map(d => {
             runningBalance += d.balance; // d.balance aqui é a variação do mês (incluindo internas)
@@ -157,7 +190,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
                 balance: Number(runningBalance.toFixed(2))
             };
         });
-    }, [transactions, selectedYear, selectedCurrency, language]);
+    }, [transactions, selectedYear, selectedCurrency, language, subscriptions, creditTransactions]);
 
     const pieData = useMemo(() => {
         return [
