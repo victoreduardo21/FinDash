@@ -647,6 +647,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                 onEdit={onOpenModal}
                 onDelete={onDeleteTransaction}
                 language={language}
+                currentUser={currentUser}
             />
         </div>
     </div>

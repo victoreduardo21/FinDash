@@ -9,7 +9,7 @@ import { ArrowDownIcon } from '../components/icons/ArrowDownIcon';
 import { CreditCardIcon } from '../components/icons/CreditCardIcon';
 import { CalendarIcon } from '../components/icons/CalendarIcon';
 import { ChevronDownIcon } from '../components/icons/ChevronDownIcon';
-import { PersonalTransaction, TransactionType, Investment, Page, Currency, Language, CreditTransaction, Subscription } from '../types';
+import { PersonalTransaction, TransactionType, Investment, Page, Currency, Language, CreditTransaction, Subscription, User } from '../types';
 import { SwitchHorizontalIcon } from '../components/icons/SwitchHorizontalIcon';
 import { useTranslation } from '../translations';
 
@@ -27,6 +27,7 @@ interface DashboardProps {
     language: Language;
     selectedCurrency: Currency;
     onCurrencyChange: (currency: Currency) => void;
+    currentUser?: User | null;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -42,7 +43,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     searchQuery, 
     language, 
     selectedCurrency, 
-    onCurrencyChange 
+    onCurrencyChange,
+    currentUser
 }) => {
   const t = useTranslation(language);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -236,6 +238,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           onEdit={onEditTransaction} 
           onDelete={onDeleteTransaction} 
           language={language} 
+          currentUser={currentUser}
       />
     </div>
   );
