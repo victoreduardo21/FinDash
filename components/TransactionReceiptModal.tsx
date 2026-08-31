@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { PersonalTransaction, TransactionType, Language, User } from '../types';
+import { sharePdfToWhatsApp } from '../utils/pdfShare';
 import { 
   X, 
   Download, 
@@ -13,7 +14,9 @@ import {
   Wallet, 
   FileText,
   User as UserIcon,
-  MessageCircle
+  MessageCircle,
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TransactionReceiptModalProps {
@@ -33,6 +36,8 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
 }) => {
   const [copied, setCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
 
   if (!isOpen || !transaction) return null;
 
@@ -65,10 +70,128 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
   const generateReceiptText = () => {
     const divider = '━━━━━━━━━━━━━━━━━━━━━━━━━';
     if (isPT) {
-      return `📄 *COMPROVANTE DE LANÇAMENTO*\n*Money Dashs | GTS Global Tech*\n${divider}\n💰 *Valor:* ${isIncome ? '+' : '-'}${currencySymbol} ${formattedAmount}\n📝 *Descrição:* ${transaction.description}\n🏷️ *Categoria:* ${transaction.category}\n📊 *Tipo:* ${isIncome ? 'Receita (Entrada)' : 'Despesa (Saída)'}\n📅 *Data:* ${displayDate}\n💳 *Moeda/Carteira:* ${transaction.currency || 'BRL'}\n👤 *Titular:* ${userName}\n🔒 *Autenticação:* ${authCode}\n${divider}\n_Comprovante gerado eletronicamente em ${new Date().toLocaleDateString('pt-BR')}_`;
+      return `📄 *COMPROVANTE DE LANÇAMENTO OFICIAL (PDF)*\n*Money Dashs | GTS Global Tech Software*\n${divider}\n💰 *Valor:* ${isIncome ? '+' : '-'}${currencySymbol} ${formattedAmount}\n📝 *Descrição:* ${transaction.description}\n🏷️ *Categoria:* ${transaction.category}\n📊 *Tipo:* ${isIncome ? 'Receita (Entrada)' : 'Despesa (Saída)'}\n📅 *Data:* ${displayDate}\n💳 *Moeda/Carteira:* ${transaction.currency || 'BRL'}\n👤 *Titular:* ${userName}\n🔒 *Autenticação:* ${authCode}\n${divider}\n📎 _Comprovante oficial em formato PDF gerado eletronicamente em ${new Date().toLocaleDateString('pt-BR')}._`;
     } else {
-      return `📄 *TRANSACTION RECEIPT*\n*Money Dashs | GTS Global Tech*\n${divider}\n💰 *Amount:* ${isIncome ? '+' : '-'}${currencySymbol} ${formattedAmount}\n📝 *Description:* ${transaction.description}\n🏷️ *Category:* ${transaction.category}\n📊 *Type:* ${isIncome ? 'Income' : 'Expense'}\n📅 *Date:* ${displayDate}\n💳 *Currency/Wallet:* ${transaction.currency || 'USD'}\n👤 *Holder:* ${userName}\n🔒 *Auth Code:* ${authCode}\n${divider}\n_Electronically generated on ${new Date().toLocaleDateString('en-US')}_`;
+      return `📄 *OFFICIAL TRANSACTION RECEIPT (PDF)*\n*Money Dashs | GTS Global Tech Software*\n${divider}\n💰 *Amount:* ${isIncome ? '+' : '-'}${currencySymbol} ${formattedAmount}\n📝 *Description:* ${transaction.description}\n🏷️ *Category:* ${transaction.category}\n📊 *Type:* ${isIncome ? 'Income' : 'Expense'}\n📅 *Date:* ${displayDate}\n💳 *Currency/Wallet:* ${transaction.currency || 'USD'}\n👤 *Holder:* ${userName}\n🔒 *Auth Code:* ${authCode}\n${divider}\n📎 _Official PDF statement generated on ${new Date().toLocaleDateString('en-US')}._`;
     }
+  };
+
+  const buildReceiptPdfDoc = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a5' // A5 is standard for receipts/vouchers
+    });
+
+    const colorPrimary = [15, 23, 42]; // Slate 900
+    const colorTextSec = [100, 116, 139]; // Slate 500
+
+    // 1. Banner Header
+    doc.setFillColor(colorPrimary[0], colorPrimary[1], colorPrimary[2]);
+    doc.rect(8, 8, 132, 18, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("GTS Global Tech Software | Money Dashs", 13, 17);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(isPT ? 'COMPROVANTE OFICIAL DE LANÇAMENTO' : 'OFFICIAL TRANSACTION RECEIPT', 13, 22);
+
+    doc.setFontSize(7);
+    doc.text(new Date().toLocaleDateString(isPT ? 'pt-BR' : 'en-US'), 118, 17);
+
+    // 2. Receipt Box Container
+    doc.setFillColor(248, 250, 252);
+    doc.rect(8, 30, 132, 120, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(8, 30, 132, 120, 'S');
+
+    // Status badge
+    doc.setFillColor(isIncome ? 220 : 254, isIncome ? 252 : 226, isIncome ? 231 : 226);
+    doc.rect(13, 35, 122, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(isIncome ? 5 : 185, isIncome ? 150 : 28, isIncome ? 105 : 28);
+    const statusText = isIncome 
+      ? (isPT ? 'LANCAMENTO EFETIVADO (RECEITA)' : 'COMPLETED TRANSACTION (INCOME)')
+      : (isPT ? 'LANCAMENTO EFETIVADO (DESPESA)' : 'COMPLETED TRANSACTION (EXPENSE)');
+    doc.text(statusText, 74, 41.5, { align: 'center' });
+
+    // Amount Display
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(isIncome ? 16 : 220, isIncome ? 185 : 38, isIncome ? 129 : 38);
+    const sign = isIncome ? '+ ' : '- ';
+    doc.text(`${sign}${currencySymbol} ${formattedAmount}`, 74, 55, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(colorTextSec[0], colorTextSec[1], colorTextSec[2]);
+    doc.text(transaction.currency === 'USD' ? 'Carteira Dolar (USD)' : 'Carteira Real (BRL)', 74, 60, { align: 'center' });
+
+    // Divider
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineDashPattern([1.5, 1.5], 0);
+    doc.line(13, 65, 135, 65);
+    doc.setLineDashPattern([], 0);
+
+    // Details grid
+    let yPos = 73;
+    const addField = (label: string, value: string) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(colorTextSec[0], colorTextSec[1], colorTextSec[2]);
+      doc.text(label.toUpperCase(), 14, yPos);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      const safeVal = value.length > 32 ? value.substring(0, 30) + '...' : value;
+      doc.text(safeVal, 60, yPos);
+
+      doc.setDrawColor(241, 245, 249);
+      doc.line(14, yPos + 2, 134, yPos + 2);
+      yPos += 7.5;
+    };
+
+    addField(isPT ? 'Descricao' : 'Description', transaction.description);
+    addField(isPT ? 'Categoria' : 'Category', transaction.category);
+    addField(isPT ? 'Data do Evento' : 'Event Date', displayDate);
+    addField(isPT ? 'Titular' : 'Account Holder', userName);
+    addField(isPT ? 'Moeda' : 'Currency', transaction.currency || 'BRL');
+    addField(isPT ? 'Autenticacao' : 'Auth Code', authCode);
+
+    // Security seal box
+    yPos += 3;
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, yPos, 120, 11, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(isPT ? "AUTENTICACAO DIGITAL CRIPTOGRAFADA" : "ENCRYPTED DIGITAL AUTHENTICATION", 17, yPos + 4.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(100, 116, 139);
+    doc.text(isPT ? "Registrado no sistema GTS Global Tech Software com validade de conferencia." : "Registered in GTS Global Tech Software with full audit validity.", 17, yPos + 8.5);
+
+    // Signatures
+    yPos += 20;
+    doc.setDrawColor(203, 213, 225);
+    doc.line(18, yPos, 65, yPos);
+    doc.line(82, yPos, 130, yPos);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(isPT ? 'Assinatura do Titular' : 'Holder Signature', 41.5, yPos + 4, { align: 'center' });
+    doc.text('GTS Global Tech Software', 106, yPos + 4, { align: 'center' });
+
+    const cleanDesc = (transaction.description || 'transacao').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    const outputFilename = `comprovante_${cleanDesc}_${formattedDate}.pdf`;
+
+    return { doc, outputFilename };
   };
 
   const handleCopy = async () => {
@@ -81,24 +204,70 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
     }
   };
 
-  const handleShareWhatsApp = () => {
-    const text = generateReceiptText();
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+  const handleShareWhatsApp = async () => {
+    setIsSharingWhatsApp(true);
+    setShareNotice(null);
+    try {
+      const { doc, outputFilename } = buildReceiptPdfDoc();
+      const result = await sharePdfToWhatsApp({
+        doc,
+        fileName: outputFilename,
+        shareTitle: isPT ? 'Comprovante Oficial de Lançamento (PDF)' : 'Official Transaction Receipt (PDF)',
+        summaryText: generateReceiptText(),
+        onSuccess: (mode) => {
+          if (mode === 'download-and-whatsapp') {
+            setShareNotice(isPT 
+              ? '📄 PDF baixado com sucesso! O WhatsApp foi aberto para você enviar e anexar o comprovante.'
+              : '📄 PDF downloaded! WhatsApp opened so you can send and attach the receipt.'
+            );
+          } else {
+            setShareNotice(isPT ? '✅ Comprovante em PDF compartilhado!' : '✅ PDF receipt shared!');
+          }
+          setTimeout(() => setShareNotice(null), 6000);
+        }
+      });
+
+      if (result === 'download-and-whatsapp') {
+        setShareNotice(isPT 
+          ? '📄 PDF baixado no seu dispositivo! O WhatsApp foi aberto para você enviar a mensagem e anexar o arquivo.'
+          : '📄 PDF downloaded! WhatsApp opened so you can send and attach the file.'
+        );
+        setTimeout(() => setShareNotice(null), 6000);
+      }
+    } catch (err) {
+      console.error('Error sharing receipt to WhatsApp:', err);
+    } finally {
+      setIsSharingWhatsApp(false);
+    }
   };
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
+    setIsGeneratingPdf(true);
+    try {
+      const { doc, outputFilename } = buildReceiptPdfDoc();
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], outputFilename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
         await navigator.share({
-          title: isPT ? 'Comprovante de Lançamento' : 'Transaction Receipt',
+          files: [pdfFile],
+          title: isPT ? 'Comprovante Oficial de Lançamento' : 'Official Transaction Receipt',
           text: generateReceiptText(),
         });
-      } catch (err) {
+      } else if (navigator.share) {
+        await navigator.share({
+          title: isPT ? 'Comprovante Oficial de Lançamento' : 'Official Transaction Receipt',
+          text: generateReceiptText(),
+        });
+      } else {
+        await handleShareWhatsApp();
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
         console.error('Error sharing:', err);
       }
-    } else {
-      handleShareWhatsApp();
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -106,127 +275,14 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
     setIsGeneratingPdf(true);
     setTimeout(() => {
       try {
-        const doc = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a5' // A5 is standard for receipts/vouchers
-        });
-
-        const colorPrimary = [15, 23, 42]; // Slate 900
-        const colorTextSec = [100, 116, 139]; // Slate 500
-
-        // 1. Banner Header
-        doc.setFillColor(colorPrimary[0], colorPrimary[1], colorPrimary[2]);
-        doc.rect(8, 8, 132, 18, 'F');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(255, 255, 255);
-        doc.text("GTS Global Tech Software | Money Dashs", 13, 17);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.text(isPT ? 'COMPROVANTE OFICIAL DE LANÇAMENTO' : 'OFFICIAL TRANSACTION RECEIPT', 13, 22);
-
-        doc.setFontSize(7);
-        doc.text(new Date().toLocaleDateString(isPT ? 'pt-BR' : 'en-US'), 118, 17);
-
-        // 2. Receipt Box Container
-        doc.setFillColor(248, 250, 252);
-        doc.rect(8, 30, 132, 120, 'F');
-        doc.setDrawColor(226, 232, 240);
-        doc.rect(8, 30, 132, 120, 'S');
-
-        // Status badge
-        doc.setFillColor(isIncome ? 220 : 254, isIncome ? 252 : 226, isIncome ? 231 : 226); // emerald-100 or red-100
-        doc.rect(13, 35, 122, 10, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(isIncome ? 5 : 185, isIncome ? 150 : 28, isIncome ? 105 : 28);
-        const statusText = isIncome 
-          ? (isPT ? 'LANCAMENTO EFETIVADO (RECEITA)' : 'COMPLETED TRANSACTION (INCOME)')
-          : (isPT ? 'LANCAMENTO EFETIVADO (DESPESA)' : 'COMPLETED TRANSACTION (EXPENSE)');
-        doc.text(statusText, 74, 41.5, { align: 'center' });
-
-        // Amount Display
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(18);
-        doc.setTextColor(isIncome ? 16 : 220, isIncome ? 185 : 38, isIncome ? 129 : 38);
-        const sign = isIncome ? '+ ' : '- ';
-        doc.text(`${sign}${currencySymbol} ${formattedAmount}`, 74, 55, { align: 'center' });
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(colorTextSec[0], colorTextSec[1], colorTextSec[2]);
-        doc.text(transaction.currency === 'USD' ? 'Carteira Dólar (USD)' : 'Carteira Real (BRL)', 74, 60, { align: 'center' });
-
-        // Divider
-        doc.setDrawColor(203, 213, 225);
-        doc.setLineDashPattern([1.5, 1.5], 0);
-        doc.line(13, 65, 135, 65);
-        doc.setLineDashPattern([], 0);
-
-        // Details grid
-        let yPos = 73;
-        const addField = (label: string, value: string) => {
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7.5);
-          doc.setTextColor(colorTextSec[0], colorTextSec[1], colorTextSec[2]);
-          doc.text(label.toUpperCase(), 14, yPos);
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8.5);
-          doc.setTextColor(15, 23, 42);
-          const safeVal = value.length > 32 ? value.substring(0, 30) + '...' : value;
-          doc.text(safeVal, 60, yPos);
-
-          doc.setDrawColor(241, 245, 249);
-          doc.line(14, yPos + 2, 134, yPos + 2);
-          yPos += 7.5;
-        };
-
-        addField(isPT ? 'Descricao' : 'Description', transaction.description);
-        addField(isPT ? 'Categoria' : 'Category', transaction.category);
-        addField(isPT ? 'Data do Evento' : 'Event Date', displayDate);
-        addField(isPT ? 'Titular' : 'Account Holder', userName);
-        addField(isPT ? 'Moeda' : 'Currency', transaction.currency || 'BRL');
-        addField(isPT ? 'Autenticacao' : 'Auth Code', authCode);
-
-        // Security seal box
-        yPos += 3;
-        doc.setFillColor(241, 245, 249);
-        doc.rect(14, yPos, 120, 11, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6.5);
-        doc.setTextColor(71, 85, 105);
-        doc.text(isPT ? "AUTENTICACAO DIGITAL CRIPTOGRAFADA" : "ENCRYPTED DIGITAL AUTHENTICATION", 17, yPos + 4.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6);
-        doc.setTextColor(100, 116, 139);
-        doc.text(isPT ? "Registrado no sistema GTS Global Tech Software com validade de conferencia." : "Registered in GTS Global Tech Software with full audit validity.", 17, yPos + 8.5);
-
-        // Signatures
-        yPos += 20;
-        doc.setDrawColor(203, 213, 225);
-        doc.line(18, yPos, 65, yPos);
-        doc.line(82, yPos, 130, yPos);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.5);
-        doc.setTextColor(100, 116, 139);
-        doc.text(isPT ? 'Assinatura do Titular' : 'Holder Signature', 41.5, yPos + 4, { align: 'center' });
-        doc.text('GTS Global Tech Software', 106, yPos + 4, { align: 'center' });
-
-        // Save PDF
-        const cleanDesc = (transaction.description || 'transacao').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-        const outputFilename = `comprovante_${cleanDesc}_${formattedDate}.pdf`;
+        const { doc, outputFilename } = buildReceiptPdfDoc();
         doc.save(outputFilename);
       } catch (err) {
         console.error("Error generating receipt PDF:", err);
       } finally {
         setIsGeneratingPdf(false);
       }
-    }, 300);
+    }, 250);
   };
 
   return (
@@ -349,17 +405,36 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
 
           </div>
 
+          {/* Notice Banner when sharing/downloading */}
+          {shareNotice && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-start gap-2 text-emerald-800 dark:text-emerald-300 text-xs animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <span>{shareNotice}</span>
+            </div>
+          )}
+
           {/* Quick Share Buttons Strip */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             
-            {/* WHATSAPP SHARE */}
+            {/* WHATSAPP SHARE WITH PDF */}
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-sm active:scale-[0.98]"
+              disabled={isSharingWhatsApp}
+              className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-75 text-white font-bold text-xs transition-all shadow-sm active:scale-[0.98]"
+              title={isPT ? 'Enviar comprovante oficial em PDF para o WhatsApp' : 'Send official PDF receipt to WhatsApp'}
             >
-              <MessageCircle className="w-4 h-4" />
-              WhatsApp
+              {isSharingWhatsApp ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <span>{isPT ? 'Preparando...' : 'Preparing...'}</span>
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="w-4 h-4" />
+                  <span>WhatsApp (PDF)</span>
+                </>
+              )}
             </button>
 
             {/* COPY TEXT */}

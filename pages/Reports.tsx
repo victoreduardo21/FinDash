@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useRef } from 'react';
-import { PersonalTransaction, TransactionType, Currency, Language, Investment, CreditTransaction, Subscription } from '../types';
+import { PersonalTransaction, TransactionType, Currency, Language, Investment, CreditTransaction, Subscription, User } from '../types';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ArrowDownIcon } from '../components/icons/ArrowDownIcon';
 import { ArrowUpIcon } from '../components/icons/ArrowUpIcon';
@@ -8,7 +8,9 @@ import { TrendingUpIcon } from '../components/icons/TrendingUpIcon';
 import { CreditCardIcon } from '../components/icons/CreditCardIcon';
 import { CalendarIcon } from '../components/icons/CalendarIcon';
 import { ChevronDownIcon } from '../components/icons/ChevronDownIcon';
+import { FileText, Download, ShieldCheck, Sparkles } from 'lucide-react';
 import { useTranslation } from '../translations';
+import AnnualIncomeReportModal from '../components/AnnualIncomeReportModal';
 
 interface ReportsProps {
     transactions: PersonalTransaction[];
@@ -18,6 +20,7 @@ interface ReportsProps {
     language: Language;
     selectedCurrency: Currency;
     onCurrencyChange: (currency: Currency) => void;
+    currentUser?: User | null;
 }
 
 const COLOR_RECEITA = '#10B981';
@@ -25,12 +28,23 @@ const COLOR_DESPESA = '#EF4444';
 const COLOR_APORTE = '#6366F1';
 const COLOR_SALDO = '#3B82F6';
 
-const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = [], investments, subscriptions = [], language, selectedCurrency, onCurrencyChange }) => {
+const Reports: React.FC<ReportsProps> = ({ 
+    transactions, 
+    creditTransactions = [], 
+    investments, 
+    subscriptions = [], 
+    language, 
+    selectedCurrency, 
+    onCurrencyChange,
+    currentUser
+}) => {
     const t = useTranslation(language);
+    const isPT = language === 'pt-BR';
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     });
+    const [isAnnualReportOpen, setIsAnnualReportOpen] = useState(false);
     const monthInputRef = useRef<HTMLInputElement>(null);
 
     const formatCurrency = (value: number) => {
@@ -210,12 +224,27 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
 
     return (
         <div className="space-y-8 pb-10">
+            {/* TOP BAR */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">{t('reports')}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Visão Geral Detalhada ({selectedCurrency})</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* INFORME DE RENDIMENTOS ANUAL BUTTON */}
+                    <button
+                        type="button"
+                        onClick={() => setIsAnnualReportOpen(true)}
+                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all active:scale-95 border border-indigo-500/30"
+                        title={isPT ? 'Gerar e baixar o informe oficial de rendimentos para IRPF' : 'Generate and download annual tax statement'}
+                    >
+                        <FileText className="w-4 h-4" />
+                        <span>{isPT ? 'Informe de Rendimentos' : 'Annual Income Report'}</span>
+                        <span className="bg-white/20 text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                            {selectedYear}
+                        </span>
+                    </button>
+
                     <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex gap-1">
                         <button onClick={() => onCurrencyChange('BRL')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCurrency === 'BRL' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>BRL</button>
                         <button onClick={() => onCurrencyChange('USD')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCurrency === 'USD' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>USD</button>
@@ -241,8 +270,43 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
                             value={selectedMonth} 
                             onChange={(e) => setSelectedMonth(e.target.value)} 
                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+                            aria-label="Selecionar mês de análise"
                         />
                     </div>
+                </div>
+            </div>
+
+            {/* ANNUAL STATEMENT HIGHLIGHT BANNER */}
+            <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-slate-950 text-white rounded-2xl p-5 sm:p-6 shadow-xl border border-indigo-500/20 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="relative z-10 max-w-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border border-indigo-400/30 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" />
+                            {isPT ? 'Fiscal & IRPF' : 'Tax & Accounting'}
+                        </span>
+                        <span className="text-gray-400 text-xs">•</span>
+                        <span className="text-gray-300 text-xs font-semibold">
+                            {isPT ? `Ano-Calendário ${selectedYear}` : `Tax Year ${selectedYear}`}
+                        </span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-black tracking-tight text-white mb-1">
+                        {isPT ? 'Informe de Rendimentos e Posição Patrimonial' : 'Annual Income & Financial Statement'}
+                    </h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                        {isPT 
+                            ? 'Emita a declaração consolidada anual com total de receitas, custo de vida, aportes, saldo mês a mês e posição de ativos em 31/12 em PDF oficial ou WhatsApp.'
+                            : 'Generate your official annual statement with revenues, deductible expenses, month-by-month cashflow, and year-end asset holdings in PDF or WhatsApp.'}
+                    </p>
+                </div>
+                <div className="relative z-10 flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
+                    <button
+                        type="button"
+                        onClick={() => setIsAnnualReportOpen(true)}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold text-xs shadow-lg shadow-indigo-950 transition-all active:scale-95"
+                    >
+                        <FileText className="w-4 h-4" />
+                        <span>{isPT ? 'Visualizar e Emitir Informe' : 'View & Generate Report'}</span>
+                    </button>
                 </div>
             </div>
 
@@ -332,6 +396,20 @@ const Reports: React.FC<ReportsProps> = ({ transactions, creditTransactions = []
                     </div>
                 </div>
             </div>
+
+            {/* MODAL DO INFORME DE RENDIMENTOS ANUAL */}
+            <AnnualIncomeReportModal
+                isOpen={isAnnualReportOpen}
+                onClose={() => setIsAnnualReportOpen(false)}
+                transactions={transactions}
+                investments={investments}
+                creditTransactions={creditTransactions}
+                subscriptions={subscriptions}
+                language={language}
+                selectedCurrency={selectedCurrency}
+                onCurrencyChange={onCurrencyChange}
+                currentUser={currentUser}
+            />
         </div>
     );
 };

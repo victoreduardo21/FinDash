@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ArrowLeft, X, Sparkles, HelpCircle } from 'lucide-react';
 import { Language } from '../types';
@@ -19,7 +19,6 @@ interface TourGuideProps {
 export const TourGuide: React.FC<TourGuideProps> = ({ isOpen, onClose, language }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [coords, setCoords] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
-    const cardRef = useRef<HTMLDivElement>(null);
     const [cardStyle, setCardStyle] = useState<React.CSSProperties>({});
 
     const steps: Step[] = [
@@ -220,7 +219,7 @@ export const TourGuide: React.FC<TourGuideProps> = ({ isOpen, onClose, language 
             {/* Floating Popover Dialogue Box */}
             <AnimatePresence mode="wait">
                 <motion.div
-                    ref={cardRef}
+                    key={`tour-step-${currentStep}`}
                     style={cardStyle}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
