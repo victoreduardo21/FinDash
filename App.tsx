@@ -22,7 +22,8 @@ import { api } from './services/api';
 import { auth, db, handleFirestoreError, OperationType } from './services/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot, getDocFromServer, doc, getDoc } from 'firebase/firestore';
-import WhatsAppButton from './components/WhatsAppButton';
+import { WhatsAppModal } from './components/WhatsAppModal';
+import { InstallAppModal } from './components/InstallAppModal';
 import Toast, { ToastMessage } from './components/Toast';
 import { CheckCircleIcon } from 'lucide-react';
 import { translations } from './translations';
@@ -57,6 +58,8 @@ const App: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<PersonalTransaction | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [isInstallAppModalOpen, setIsInstallAppModalOpen] = useState(false);
 
   // Auto-start onboarding tour for new users on log in
   useEffect(() => {
@@ -338,7 +341,17 @@ const App: React.FC = () => {
     <div className="flex h-screen w-full max-w-[100vw] bg-[#f8fafc] dark:bg-slate-900 relative overflow-hidden">
        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
        
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} activePage={activePage} setActivePage={setActivePage} currentUser={currentUser} language={language} onUpgrade={() => setIsPlanModalOpen(true)} />
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        setIsOpen={setIsSidebarOpen} 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        currentUser={currentUser} 
+        language={language} 
+        onUpgrade={() => setIsPlanModalOpen(true)}
+        onOpenWhatsApp={() => setIsWhatsAppModalOpen(true)}
+        onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
+      />
 
       <div className="flex-1 flex flex-col w-full min-w-0 h-full max-w-full overflow-hidden">
         <Header 
@@ -356,6 +369,8 @@ const App: React.FC = () => {
             creditTransactions={creditTransactions}
             onStartTour={handleStartTour}
             systemNotifications={systemNotifications}
+            onOpenWhatsApp={() => setIsWhatsAppModalOpen(true)}
+            onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
         />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-6 lg:p-8 pb-28 md:pb-8 no-scrollbar max-w-full">
@@ -426,7 +441,20 @@ const App: React.FC = () => {
             {activePage === 'Insights' && <AIInsights transactions={transactions} investments={investments} creditCards={creditCards} creditTransactions={creditTransactions} currentUser={currentUser} aiConversation={aiConversation} token={token || ''} />}
             {activePage === 'Créditos' && <Credits creditCards={creditCards} creditTransactions={creditTransactions} language={language} selectedCurrency={selectedCurrency} onCurrencyChange={setSelectedCurrency} token={token || ''} currentUser={currentUser} />}
             {activePage === 'Assinaturas' && <Subscriptions subscriptions={subscriptions} language={language} selectedCurrency={selectedCurrency} token={token || ''} />}
-            {activePage === 'Configurações' && currentUser && <Settings theme={theme} setTheme={setTheme} currentUser={currentUser} onUpdatePassword={async (c, n) => { await api.updatePassword({currentPassword: c, newPassword: n}, token); }} onUpdateAvatar={async (a) => { await api.updateAvatar({avatar: a}, token); }} onCreateUser={async (u) => { const r = await api.createUser(u); return r; }} language={language} onLanguageChange={setLanguage} />}
+            {activePage === 'Configurações' && currentUser && (
+              <Settings 
+                theme={theme} 
+                setTheme={setTheme} 
+                currentUser={currentUser} 
+                onUpdatePassword={async (c, n) => { await api.updatePassword({currentPassword: c, newPassword: n}, token); }} 
+                onUpdateAvatar={async (a) => { await api.updateAvatar({avatar: a}, token); }} 
+                onCreateUser={async (u) => { const r = await api.createUser(u); return r; }} 
+                language={language} 
+                onLanguageChange={setLanguage} 
+                onOpenWhatsApp={() => setIsWhatsAppModalOpen(true)}
+                onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
+              />
+            )}
             {activePage === 'Admin' && (currentUser?.role === 'admin' || currentUser?.email === 'eduardopontesdias@outlook.com' || currentUser?.email === 'gtsglobaltech01@gmail.com') && <Admin token={token || ''} />}
         </main>
       </div>
@@ -451,7 +479,7 @@ const App: React.FC = () => {
                       </p>
                   </div>
                   <button onClick={handleLogout} className="w-full py-4 bg-[#020617] dark:bg-white dark:text-[#020617] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-xl">
-                      {translations[language].logout.toUpperCase()}
+                    {translations[language].logout.toUpperCase()}
                   </button>
               </div>
           </div>
@@ -476,7 +504,8 @@ const App: React.FC = () => {
       />
       <TransferModal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} onSaveTransfer={handleSaveTransfer} />
       <PlanSelectionModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} onConfirmUpgrade={handleUpdatePlan} currentPlan={currentUser?.plan || 'FREE'} />
-      <WhatsAppButton />
+      <WhatsAppModal isOpen={isWhatsAppModalOpen} onClose={() => setIsWhatsAppModalOpen(false)} language={language} />
+      <InstallAppModal isOpen={isInstallAppModalOpen} onClose={() => setIsInstallAppModalOpen(false)} language={language} />
       <TourGuide isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} language={language} />
     </div>
   );

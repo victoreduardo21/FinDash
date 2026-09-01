@@ -12,7 +12,7 @@ import { WhatsAppIcon } from '../components/icons/WhatsAppIcon';
 import { useTranslation } from '../translations';
 import { auth } from '../services/firebase';
 import { RecaptchaVerifier, linkWithPhoneNumber, PhoneAuthProvider, PhoneMultiFactorGenerator } from 'firebase/auth';
-import { CheckCircleIcon, Mail, BellRing } from 'lucide-react';
+import { CheckCircleIcon, Mail, BellRing, Smartphone, Download, MessageCircle, ExternalLink } from 'lucide-react';
 
 const ADMIN_EMAIL = 'eduardopontesdias@outlook.com'; 
 
@@ -25,9 +25,22 @@ interface SettingsProps {
     onCreateUser: (newUser: Omit<User, 'id'>) => Promise<{success: boolean, message: string}>;
     language: Language;
     onLanguageChange: (lang: Language) => void;
+    onOpenWhatsApp?: () => void;
+    onOpenInstallApp?: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpdatePassword, onUpdateAvatar, onCreateUser, language, onLanguageChange }) => {
+const Settings: React.FC<SettingsProps> = ({ 
+    theme, 
+    setTheme, 
+    currentUser, 
+    onUpdatePassword, 
+    onUpdateAvatar, 
+    onCreateUser, 
+    language, 
+    onLanguageChange,
+    onOpenWhatsApp,
+    onOpenInstallApp
+}) => {
   const t = useTranslation(language);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
@@ -566,6 +579,51 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, currentUser, onUpd
                           </button>
                       )}
                   </div>
+              </div>
+
+              {/* Seção do Aplicativo Mobile (PWA) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t pt-6 dark:border-gray-700 gap-4">
+                  <div>
+                      <p className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-blue-600" />
+                          {language === 'pt-BR' ? 'Aplicativo no Celular / PWA' : 'Mobile App / PWA'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {language === 'pt-BR' 
+                            ? 'Instale o Money Dashs como aplicativo nativo no seu celular Android, iPhone ou computador.' 
+                            : 'Install Money Dashs as a native application on your Android, iPhone or desktop.'}
+                      </p>
+                  </div>
+                  <button 
+                      onClick={onOpenInstallApp}
+                      className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                  >
+                      <Download className="w-4 h-4" />
+                      <span>{language === 'pt-BR' ? 'Instalar Aplicativo' : 'Install App'}</span>
+                  </button>
+              </div>
+
+              {/* Seção de Suporte WhatsApp */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t pt-6 dark:border-gray-700 gap-4">
+                  <div>
+                      <p className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <WhatsAppIcon className="w-4 h-4 fill-emerald-600 text-emerald-600" />
+                          {language === 'pt-BR' ? 'Suporte Oficial via WhatsApp' : 'Official WhatsApp Support'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {language === 'pt-BR' 
+                            ? 'Atendimento técnico, dúvidas sobre assinaturas, relatórios e planos VIP.' 
+                            : 'Technical support, subscription queries, reports and VIP plans.'}
+                      </p>
+                  </div>
+                  <button 
+                      onClick={onOpenWhatsApp}
+                      className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 shrink-0"
+                  >
+                      <WhatsAppIcon className="w-4 h-4 fill-white" />
+                      <span>{language === 'pt-BR' ? 'Falar no WhatsApp' : 'Open WhatsApp'}</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </button>
               </div>
           </div>
         </div>

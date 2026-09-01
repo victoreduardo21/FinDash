@@ -6,7 +6,8 @@ import { PlusIcon } from './icons/PlusIcon';
 import { MenuIcon } from './icons/MenuIcon';
 import { User, CalendarEvent, Page, Language, Subscription, CreditCard, CreditTransaction, SystemNotification } from '../types';
 import { ClockIcon } from './icons/ClockIcon';
-import { HelpCircle, Megaphone, X } from 'lucide-react';
+import { HelpCircle, Megaphone, X, Smartphone, MessageCircle } from 'lucide-react';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface HeaderProps {
     onLogout: () => void;
@@ -23,6 +24,8 @@ interface HeaderProps {
     creditTransactions?: CreditTransaction[];
     onStartTour?: () => void;
     systemNotifications?: SystemNotification[];
+    onOpenInstallApp?: () => void;
+    onOpenWhatsApp?: () => void;
 }
 
 const getInvoiceDueDate = (txDateStr: string, closingDay: number, dueDay: number): string => {
@@ -62,7 +65,9 @@ const Header: React.FC<HeaderProps> = ({
     creditCards = [],
     creditTransactions = [],
     onStartTour,
-    systemNotifications = []
+    systemNotifications = [],
+    onOpenInstallApp,
+    onOpenWhatsApp
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -416,13 +421,48 @@ const Header: React.FC<HeaderProps> = ({
               <span className="text-sm md:text-base">{userInitials}</span>
           </button>
           {isProfileMenuOpen && (
-            <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100 animate-fade-in origin-top-right">
-              <button onClick={() => {setActivePage('Configurações'); setIsProfileMenuOpen(false);}} className="w-full text-left block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium">
-                  Configurações
+            <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl py-2 z-50 border border-gray-100 dark:border-gray-700 animate-fade-in origin-top-right overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{currentUser?.name || 'Usuário'}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{currentUser?.email}</p>
+              </div>
+
+              <button 
+                onClick={() => {setActivePage('Configurações'); setIsProfileMenuOpen(false);}} 
+                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 font-semibold transition-colors"
+              >
+                <span>Configurações da Conta</span>
               </button>
-              <div className="h-px bg-gray-100 my-1 mx-2"></div>
-              <button onClick={onLogout} className="w-full text-left block px-4 py-2.5 text-xs font-black text-red-600 uppercase tracking-wider">
-                  Sair da Conta
+
+              <button 
+                onClick={() => {
+                  if (onOpenInstallApp) onOpenInstallApp();
+                  setIsProfileMenuOpen(false);
+                }} 
+                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold transition-colors"
+              >
+                <Smartphone className="w-4 h-4 text-blue-500" />
+                <span>{language === 'pt-BR' ? 'Instalar no Celular (App)' : 'Install on Mobile (App)'}</span>
+              </button>
+
+              <button 
+                onClick={() => {
+                  if (onOpenWhatsApp) onOpenWhatsApp();
+                  setIsProfileMenuOpen(false);
+                }} 
+                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-bold transition-colors"
+              >
+                <WhatsAppIcon className="w-4 h-4 fill-emerald-600 dark:fill-emerald-400" />
+                <span>{language === 'pt-BR' ? 'Atendimento WhatsApp' : 'WhatsApp Support'}</span>
+              </button>
+
+              <div className="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-2"></div>
+              
+              <button 
+                onClick={onLogout} 
+                className="w-full text-left block px-4 py-2.5 text-xs font-black text-red-600 dark:text-red-400 uppercase tracking-wider hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                Sair da Conta
               </button>
             </div>
           )}
