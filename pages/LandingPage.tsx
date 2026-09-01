@@ -239,12 +239,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
       {/* --- NAVBAR --- */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-              <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-200">
-                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                 </svg>
-              </div>
+            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+              <img 
+                src="/icon-192.png" 
+                alt="Money Dashs" 
+                className="w-9 h-9 rounded-xl object-cover shadow-md ring-1 ring-slate-200" 
+              />
               <span className="text-xl font-bold tracking-tight text-slate-900">Money <span className="text-blue-600">Dashs</span></span>
             </div>
 
@@ -630,10 +630,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
       {/* --- FOOTER --- */}
       <footer className="bg-[#020617] text-slate-400 py-16">
           <div className="max-w-7xl mx-auto px-6 text-center">
-              <div className="flex items-center justify-center gap-2 mb-8">
-                  <div className="bg-blue-600 p-1.5 rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                  </div>
+              <div className="flex items-center justify-center gap-2.5 mb-8">
+                  <img 
+                    src="/icon-192.png" 
+                    alt="Money Dashs" 
+                    className="w-8 h-8 rounded-xl object-cover shadow-md ring-1 ring-white/20" 
+                  />
                   <span className="text-xl font-bold text-white">Money Dashs</span>
               </div>
               <p className="text-xs">© 2025 Money Dashs. Powered by <span className="text-blue-500 font-bold">GTS Global Tech Software</span>.</p>

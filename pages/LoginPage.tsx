@@ -249,7 +249,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
             </button>
             <div className="relative z-10 text-white">
                 <div className="mb-8 flex items-center gap-3">
-                    <div className="bg-blue-600 p-2 rounded-xl shadow-lg"><svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
+                    <img src="/icon-192.png" alt="Money Dashs" className="w-12 h-12 rounded-2xl object-cover shadow-xl ring-2 ring-blue-500/30" />
                     <span className="text-2xl font-bold">Money Dashs</span>
                 </div>
                 <h1 className="text-5xl font-bold leading-tight mb-6">Controle Financeiro <br /><span className="text-blue-500">Sem Complicação.</span></h1>
@@ -336,12 +336,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onBack, initialMode = 'l
 
                         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
                             <div className="md:hidden text-center mb-6">
-                                <h1 className="text-3xl font-extrabold text-[#020617] flex items-center justify-center gap-2">
-                                    <span className="text-blue-600">
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                    </span>
-                                    Money Dashs
-                                </h1>
+                                <div className="flex items-center justify-center gap-2.5 mb-2">
+                                    <img src="/icon-192.png" alt="Money Dashs" className="w-10 h-10 rounded-xl object-cover shadow-md" />
+                                    <h1 className="text-2xl font-extrabold text-[#020617]">
+                                        Money <span className="text-blue-600">Dashs</span>
+                                    </h1>
+                                </div>
                             </div>
             {!isLoginMode && regStep === 1 && (
                 <div className="space-y-4">

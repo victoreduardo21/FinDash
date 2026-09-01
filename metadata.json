@@ -1,5 +1,6 @@
 {
   "name": "Money Dashs",
-  "description": "Uma aplicação de dashboard financeiro inspirada no Assas para gerenciamento de cobranças, clientes e visualização de métricas financeiras. Apresenta uma interface limpa e moderna para facilitar a gestão do seu negócio.",
-  "requestFramePermissions": []
+  "description": "Sistema completo de gestão financeira, controle de cartões de crédito, transações, investimentos e relatórios inteligentes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

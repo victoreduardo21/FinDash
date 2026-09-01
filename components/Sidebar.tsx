@@ -74,12 +74,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div id="tour-sidebar-menu" className={sidebarClasses}>
             {/* LOGO & CLOSE */}
             <div className="flex items-center justify-between p-4 border-b border-gray-800 shrink-0">
-                <div className="flex items-center gap-2">
-                    <div className="bg-blue-600 p-1.5 rounded-xl shadow-lg shadow-blue-500/20">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                    </div>
+                <div className="flex items-center gap-2.5">
+                    <img 
+                        src="/icon-192.png" 
+                        alt="Money Dashs" 
+                        className="w-9 h-9 rounded-xl object-cover shadow-lg ring-1 ring-white/20 shrink-0" 
+                    />
                     <div className="flex flex-col">
                         <h1 className="text-lg font-bold text-white tracking-tight leading-none">
                             Money <span className="text-blue-500">Dashs</span>
