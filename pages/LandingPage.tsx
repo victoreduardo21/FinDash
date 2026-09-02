@@ -8,6 +8,7 @@ import { ChartPieIcon } from '../components/icons/ChartPieIcon';
 import { SwitchHorizontalIcon } from '../components/icons/SwitchHorizontalIcon';
 import { Plan, BillingCycle, Currency, Language } from '../types';
 import { useTranslation } from '../translations';
+import { InstallAppModal } from '../components/InstallAppModal';
 import { 
   LayoutDashboard, 
   Receipt, 
@@ -27,20 +28,44 @@ import {
   AlertCircle,
   ShieldCheck,
   Zap,
-  BarChart3
+  BarChart3,
+  Smartphone,
+  Download,
+  Wallet,
+  Coins,
+  CreditCard,
+  Layers,
+  Globe2,
+  PiggyBank,
+  BellRing,
+  ArrowUpRight,
+  ArrowDownRight,
+  ShieldAlert,
+  Repeat
 } from 'lucide-react';
 
 interface LandingPageProps {
   onLogin: () => void;
   onRegister: (plan: Plan, cycle: BillingCycle) => void;
+  onOpenInstallApp?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister, onOpenInstallApp }) => {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(() => (localStorage.getItem('selected_currency') as Currency) || 'BRL');
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'pt-BR');
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [interactiveBenefitCurrency, setInteractiveBenefitCurrency] = useState<Currency>('BRL');
   
   const t = useTranslation(language);
+
+  const handleOpenInstall = () => {
+    if (onOpenInstallApp) {
+      onOpenInstallApp();
+    } else {
+      setIsInstallModalOpen(true);
+    }
+  };
 
   // --- DEMO INTERATIVA DO SISTEMA ---
   const [demoTab, setDemoTab] = useState<'Painel' | 'Transações' | 'Cartões' | 'Investimentos' | 'Assinaturas' | 'Agenda'>('Painel');
@@ -250,12 +275,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
 
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
                 <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-blue-600 transition-colors">{t('features')}</a>
+                <a href="#app-mobile" onClick={(e) => scrollToSection(e, 'app-mobile')} className="hover:text-blue-600 transition-colors flex items-center gap-1.5 font-bold text-blue-600">
+                  <Smartphone className="w-4 h-4 text-blue-600" />
+                  {language === 'pt-BR' ? 'App Mobile' : 'Mobile App'}
+                  <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Novo</span>
+                </a>
                 <a href="#qualidades" onClick={(e) => scrollToSection(e, 'qualidades')} className="hover:text-blue-600 transition-colors">{language === 'pt-BR' ? 'Qualidades' : 'Qualities'}</a>
                 <a href="#beneficios" onClick={(e) => scrollToSection(e, 'beneficios')} className="hover:text-blue-600 transition-colors">{t('benefits')}</a>
                 <a href="#planos" onClick={(e) => scrollToSection(e, 'planos')} className="hover:text-blue-600 transition-colors">{t('plans')}</a>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
+              <button 
+                onClick={handleOpenInstall}
+                className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold text-slate-700 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 transition-all shadow-sm"
+                title="Instalar App no Celular ou Computador"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-600" />
+                <span>{language === 'pt-BR' ? 'Baixar App' : 'Download App'}</span>
+              </button>
+
               <div className="hidden xs:flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
                   <button onClick={() => toggleLanguage('pt-BR')} className={`px-2 py-1 rounded-full text-[10px] font-bold ${language === 'pt-BR' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>PT</button>
                   <button onClick={() => toggleLanguage('en-US')} className={`px-2 py-1 rounded-full text-[10px] font-bold ${language === 'en-US' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>EN</button>
@@ -294,9 +333,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
                     : 'Track your wealth in multiple currencies and countries in one place. Separate expenses from investments and watch your net worth grow.'}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-fade-in-up">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in-up">
                 <button onClick={() => onRegister('FREE', 'MONTHLY')} className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold text-sm md:text-base hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 hover:scale-105 flex items-center justify-center gap-2">
                     {language === 'pt-BR' ? 'Criar Conta Gratuita' : 'Start Free Today'} <span className="text-blue-200">&rarr;</span>
+                </button>
+                <button 
+                  onClick={handleOpenInstall}
+                  className="px-7 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-sm md:text-base transition-all shadow-xl hover:shadow-2xl hover:scale-105 flex items-center justify-center gap-3 border border-slate-700 group"
+                >
+                  <Smartphone className="w-5 h-5 text-blue-400 group-hover:animate-bounce" />
+                  <span>{language === 'pt-BR' ? 'Baixar App no Celular' : 'Install Mobile App'}</span>
+                  <span className="bg-blue-600 text-[10px] font-black uppercase px-2 py-0.5 rounded-full text-white">Grátis</span>
                 </button>
             </div>
 
@@ -496,63 +543,499 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
         </div>
       </section>
 
-      {/* --- BENEFITS SECTION --- */}
-      <section id="beneficios" className="py-32 bg-[#020617] text-white overflow-hidden relative">
-          {/* Luz de fundo sutil */}
-          <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px] pointer-events-none"></div>
-          
-          <div className="max-w-7xl mx-auto px-6 relative z-10">
-              <div className="flex flex-col lg:flex-row items-center gap-24">
-                  <div className="lg:w-1/2">
-                        <h2 className="text-4xl md:text-6xl font-extrabold mb-12 leading-tight tracking-tight">
-                          {language === 'pt-BR' ? 'Por que escolher o Money Dashs?' : 'Why choose Money Dashs?'}
-                      </h2>
-                      <div className="space-y-12">
-                          <div className="flex gap-8 group">
-                              <div className="flex-shrink-0 w-14 h-14 bg-white/5 rounded-full flex items-center justify-center text-blue-400 border border-white/10 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                                  <RocketLaunchIcon className="w-6 h-6" />
-                              </div>
-                              <div>
-                                  <h4 className="text-2xl font-bold mb-3">{t('benefit1Title')}</h4>
-                                  <p className="text-slate-400 text-lg leading-relaxed">{t('benefit1Desc')}</p>
-                              </div>
-                          </div>
-                          <div className="flex gap-8 group">
-                              <div className="flex-shrink-0 w-14 h-14 bg-white/5 rounded-full flex items-center justify-center text-indigo-400 border border-white/10 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                                  <UsersIcon className="w-6 h-6" />
-                              </div>
-                              <div>
-                                  <h4 className="text-2xl font-bold mb-3">{t('benefit2Title')}</h4>
-                                  <p className="text-slate-400 text-lg leading-relaxed">{t('benefit2Desc')}</p>
-                              </div>
-                          </div>
-                      </div>
+      {/* --- NOVA SECÇÃO: APP MOBILE / BAIXAR APLICATIVO --- */}
+      <section id="app-mobile" className="py-24 bg-gradient-to-b from-slate-900 to-[#020617] text-white relative overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            
+            {/* Coluna Texto App */}
+            <div className="w-full lg:w-1/2 space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                <Smartphone className="w-4 h-4 text-blue-400" />
+                {language === 'pt-BR' ? 'Disponível para iPhone, Android & PC' : 'Available for iPhone, Android & PC'}
+              </div>
+
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                {language === 'pt-BR' ? (
+                  <>Instale o <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Money Dashs App</span> e leve suas finanças no bolso.</>
+                ) : (
+                  <>Install <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Money Dashs App</span> and manage your wealth anywhere.</>
+                )}
+              </h2>
+
+              <p className="text-slate-300 text-base md:text-lg leading-relaxed">
+                {language === 'pt-BR' 
+                  ? 'Acesse instantaneamente sem precisar baixar centenas de megabytes em lojas. O aplicativo roda em tela cheia, funciona offline, envia alertas de vencimento e sincroniza em tempo real com seu computador.'
+                  : 'Instant access without downloading heavy store packages. Runs in standalone fullscreen mode, works offline, sends bill alerts, and syncs in real time with your computer.'}
+              </p>
+
+              {/* Grid de Vantagens do App */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="flex items-start gap-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="p-2 bg-blue-500/20 text-blue-400 rounded-xl shrink-0">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-white">{language === 'pt-BR' ? 'Instalação em 1 Toque' : '1-Tap Fast Install'}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{language === 'pt-BR' ? 'Leve, seguro e não ocupa memória.' : 'Lightweight and memory safe.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-white">{language === 'pt-BR' ? 'Modo Standalone Nativo' : 'Native Standalone UI'}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{language === 'pt-BR' ? 'Sem barras do navegador no caminho.' : 'No browser bars cluttering.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="p-2 bg-purple-500/20 text-purple-400 rounded-xl shrink-0">
+                    <BellRing className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-white">{language === 'pt-BR' ? 'Lembretes de Fatura' : 'Bill Due Reminders'}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{language === 'pt-BR' ? 'Notificações antes dos vencimentos.' : 'Notifications before due dates.'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-white">{language === 'pt-BR' ? 'Segurança e Biometria' : 'Safe & Biometric Lock'}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{language === 'pt-BR' ? 'Protegido por Face ID e digital.' : 'Protected by Face ID/Fingerprint.'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex flex-wrap items-center gap-4 pt-4">
+                <button
+                  onClick={handleOpenInstall}
+                  className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-blue-600/30 hover:scale-105 flex items-center gap-3"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{language === 'pt-BR' ? 'Baixar & Instalar App' : 'Download & Install App'}</span>
+                </button>
+
+                <button
+                  onClick={handleOpenInstall}
+                  className="px-6 py-4 bg-white/10 hover:bg-white/15 text-white font-bold rounded-2xl transition-all border border-white/15 flex items-center gap-2.5 text-sm"
+                >
+                  <Smartphone className="w-4 h-4 text-blue-400" />
+                  <span>{language === 'pt-BR' ? 'Ver Passo a Passo' : 'View Install Guide'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Coluna Mockup Celular */}
+            <div className="w-full lg:w-1/2 flex justify-center">
+              <div className="relative w-full max-w-[340px] sm:max-w-[380px]">
+                {/* Efeito Glow */}
+                <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[3rem] blur-2xl opacity-30 animate-pulse"></div>
+
+                {/* Moldura do Celular */}
+                <div className="relative bg-[#0b1120] border-[6px] border-slate-700/80 rounded-[2.8rem] p-3 shadow-2xl overflow-hidden ring-1 ring-white/20">
+                  {/* Speaker & Camera Notch */}
+                  <div className="flex justify-center items-center gap-2 py-2 mb-2">
+                    <div className="w-14 h-4 bg-slate-900 rounded-full flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
+                    </div>
                   </div>
 
-                  <div className="lg:w-1/2 relative w-full flex justify-center lg:justify-end">
-                      {/* Glass Container da Imagem */}
-                      <div className="relative p-12 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden group">
-                           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-50"></div>
+                  {/* Tela do App no Celular */}
+                  <div className="bg-[#0f172a] rounded-[2.2rem] p-4 text-white space-y-4 border border-white/5">
+                    {/* Header Mobile */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <img src="/icon-192.png" alt="Money Dashs" className="w-8 h-8 rounded-xl object-cover shadow ring-1 ring-white/20" />
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-medium leading-none">Aplicativo Ativo</p>
+                          <h4 className="text-xs font-bold text-white leading-tight">Money Dashs</h4>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-extrabold rounded-full">
+                        ● Online
+                      </span>
+                    </div>
+
+                    {/* Saldo no App */}
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Saldo Total Líquido</p>
+                          <h3 className="text-xl font-extrabold text-white mt-1">R$ 148.750,00</h3>
+                        </div>
+                        <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full text-white">BRL</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-[11px] text-blue-100 pt-2 border-t border-white/10">
+                        <span>Investimentos: R$ 85.000</span>
+                        <span className="font-bold text-emerald-300">+24.8%</span>
+                      </div>
+                    </div>
+
+                    {/* Ações Rápidas Mobile */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
+                        <ArrowDownRight className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+                        <span className="text-[10px] font-bold block text-slate-200">Receita</span>
+                      </div>
+                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
+                        <ArrowUpRight className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                        <span className="text-[10px] font-bold block text-slate-200">Despesa</span>
+                      </div>
+                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
+                        <CreditCard className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                        <span className="text-[10px] font-bold block text-slate-200">Cartões</span>
+                      </div>
+                    </div>
+
+                    {/* Últimas Transações Mobile */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hoje</p>
+                      
+                      <div className="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center justify-center text-[10px] font-bold">✓</div>
+                          <div>
+                            <p className="font-bold text-white text-[11px]">Faturamento GTS</p>
+                            <p className="text-[9px] text-slate-400">Banco Inter</p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-400 text-xs">+ R$ 12.500</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center text-[10px] font-bold">$</div>
+                          <div>
+                            <p className="font-bold text-white text-[11px]">Dividendos XP</p>
+                            <p className="text-[9px] text-slate-400">Ações & FIIs</p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-blue-400 text-xs">+ R$ 450,00</span>
+                      </div>
+                    </div>
+
+                    {/* Botão de Instalar no Mockup */}
+                    <button 
+                      onClick={handleOpenInstall}
+                      className="w-full py-2.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-black shadow transition-all flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-3.5 h-3.5 text-blue-600" />
+                      {language === 'pt-BR' ? 'Instalar no Meu Celular' : 'Install on My Phone'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* --- BENEFITS SECTION --- */}
+      <section id="beneficios" className="py-28 bg-[#020617] text-white overflow-hidden relative">
+          {/* Luzes de fundo */}
+          <div className="absolute top-1/3 left-10 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[160px] pointer-events-none"></div>
+          <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+          
+          <div className="max-w-7xl mx-auto px-6 relative z-10">
+              {/* Header da Seção */}
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-4">
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    {language === 'pt-BR' ? 'Vantagens Estratégicas' : 'Strategic Advantages'}
+                  </div>
+                  <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+                    {language === 'pt-BR' ? (
+                      <>Por que escolher o <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Money Dashs?</span></>
+                    ) : (
+                      <>Why choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Money Dashs?</span></>
+                    )}
+                  </h2>
+                  <p className="text-slate-400 text-base md:text-lg mt-4">
+                    {language === 'pt-BR' 
+                      ? 'Uma plataforma completa projetada para transformar desordem financeira em previsibilidade, rentabilidade e liberdade.'
+                      : 'A comprehensive platform engineered to turn financial clutter into predictability, profitability, and freedom.'}
+                  </p>
+              </div>
+
+              <div className="flex flex-col lg:flex-row items-stretch gap-12 lg:gap-16">
+                  
+                  {/* COLUNA ESQUERDA: 6 CARDS DE BENEFÍCIOS */}
+                  <div className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      
+                      {/* Benefício 1 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-blue-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                  <RocketLaunchIcon className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Clareza Mental Total' : 'Total Mental Clarity'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Tire as datas e contas da cabeça. Projeções automáticas de saldo eliminam o estresse do fim do mês.'
+                                  : 'Get due dates out of your head. Automated balance projections eliminate end-of-month stress.'}
+                              </p>
+                          </div>
+                      </div>
+
+                      {/* Benefício 2 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-indigo-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                                  <Globe2 className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Liberdade & Multimoedas' : 'Global Multi-Currency'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Opere nativamente em BRL e USD com câmbio integrado. Perfeito para nômades digitais e investidores globais.'
+                                  : 'Operate natively in BRL and USD with integrated currency exchange. Tailored for global investors and nomads.'}
+                              </p>
+                          </div>
+                      </div>
+
+                      {/* Benefício 3 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-emerald-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                                  <TrendingUp className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Multiplicação de Riqueza' : 'Wealth Compounding'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Controle carteira de Ações, Renda Fixa e Cripto com cálculo automático de dividendos e rentabilidade.'
+                                  : 'Manage Stocks, Fixed Income, and Crypto with automatic dividend calculation and return tracking.'}
+                              </p>
+                          </div>
+                      </div>
+
+                      {/* Benefício 4 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-amber-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-amber-500/15 text-amber-400 border border-amber-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
+                                  <CreditCard className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Controle de Cartões' : 'Smart Credit Cards'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Acompanhe múltiplos cartões, faturas em aberto, dias de fechamento e parcelas futuras sem surpresas.'
+                                  : 'Track multiple cards, open statements, closing dates, and future installments without surprises.'}
+                              </p>
+                          </div>
+                      </div>
+
+                      {/* Benefício 5 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-purple-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-purple-500/15 text-purple-400 border border-purple-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                                  <Repeat className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Gestão de Assinaturas' : 'Subscription Radar'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Monitore despesas recorrentes (SaaS, Streaming, Cloud) e cancele serviços esquecidos economizando dinheiro.'
+                                  : 'Monitor recurring expenses (SaaS, Streaming, Cloud) and cancel forgotten services to save cash.'}
+                              </p>
+                          </div>
+                      </div>
+
+                      {/* Benefício 6 */}
+                      <div className="p-6 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-cyan-500/40 rounded-3xl transition-all duration-300 group flex flex-col justify-between">
+                          <div>
+                              <div className="w-12 h-12 bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-cyan-600 group-hover:text-white transition-all duration-300">
+                                  <ShieldCheck className="w-6 h-6" />
+                              </div>
+                              <h4 className="text-lg font-bold text-white mb-2">{language === 'pt-BR' ? 'Segurança Bancária' : 'Bank-Grade Security'}</h4>
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                {language === 'pt-BR' 
+                                  ? 'Seus dados protegidos por criptografia de alta segurança e sincronizados em nuvem entre celular e PC.'
+                                  : 'Your records secured by end-to-end cloud encryption and synchronized between phone and PC.'}
+                              </p>
+                          </div>
+                      </div>
+
+                  </div>
+
+                  {/* COLUNA DIREITA: HUB FINANCEIRO INTERATIVO COMPLETO (CHEIO DE CONTEÚDO) */}
+                  <div className="lg:w-1/2 flex flex-col justify-center">
+                      <div className="relative p-6 sm:p-8 rounded-[2.5rem] bg-[#0a101f]/90 border border-white/15 backdrop-blur-2xl shadow-2xl space-y-6">
                            
-                           {/* Card de Investimento */}
-                           <div className="relative bg-[#0a0f1e]/80 p-8 rounded-3xl border border-white/10 shadow-2xl min-w-[320px] md:min-w-[450px] transform transition-transform group-hover:translate-y-[-10px]">
-                               <div className="flex justify-between items-center gap-12">
-                                   <div className="flex items-center gap-5">
-                                       <div className="w-12 h-12 bg-green-500/10 text-green-500 rounded-xl flex items-center justify-center font-black text-lg border border-green-500/20 shadow-lg shadow-green-500/5">$$</div>
+                           {/* Barra de Topo do Painel */}
+                           <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                               <div className="flex items-center gap-3">
+                                   <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
+                                   <span className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                                     {language === 'pt-BR' ? 'Painel Financeiro em Tempo Real' : 'Real-Time Financial Hub'}
+                                   </span>
+                               </div>
+                               
+                               {/* Seletor de Moeda Interativo no Card */}
+                               <div className="flex items-center bg-white/10 p-1 rounded-xl border border-white/10">
+                                   <button 
+                                     onClick={() => setInteractiveBenefitCurrency('BRL')}
+                                     className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${interactiveBenefitCurrency === 'BRL' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                   >
+                                     BRL (R$)
+                                   </button>
+                                   <button 
+                                     onClick={() => setInteractiveBenefitCurrency('USD')}
+                                     className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${interactiveBenefitCurrency === 'USD' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                   >
+                                     USD ($)
+                                   </button>
+                               </div>
+                           </div>
+
+                           {/* Card 1: Patrimônio Total Consolidado */}
+                           <div className="p-6 bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-transparent border border-blue-500/30 rounded-3xl relative overflow-hidden">
+                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                   <div>
+                                       <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">
+                                         {language === 'pt-BR' ? 'Patrimônio Total Líquido' : 'Total Net Worth'}
+                                       </span>
+                                       <div className="flex items-baseline gap-2 mt-1">
+                                           <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                                             {interactiveBenefitCurrency === 'BRL' ? 'R$ 148.750,00' : '$ 27.546,00'}
+                                           </h3>
+                                       </div>
+                                   </div>
+                                   
+                                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold self-start sm:self-center">
+                                       <ArrowUpRight className="w-4 h-4" />
+                                       <span>+24.8% {language === 'pt-BR' ? 'este ano' : 'this year'}</span>
+                                   </div>
+                               </div>
+
+                               {/* Meta Anual Visual */}
+                               <div className="mt-4 pt-3 border-t border-white/10">
+                                   <div className="flex justify-between text-xs text-slate-300 mb-1.5 font-medium">
+                                       <span>{language === 'pt-BR' ? 'Meta de Liberdade Financeira (74% atingida)' : 'Financial Freedom Goal (74% achieved)'}</span>
+                                       <span className="font-bold text-white">{interactiveBenefitCurrency === 'BRL' ? 'R$ 200.000' : '$ 37.000'}</span>
+                                   </div>
+                                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                       <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full" style={{ width: '74%' }}></div>
+                                   </div>
+                               </div>
+                           </div>
+
+                           {/* Grid 2 Subcards: Investimentos & Reserva */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               {/* Investimentos */}
+                               <div className="p-5 bg-white/[0.04] border border-white/10 rounded-2xl flex items-center justify-between">
+                                   <div className="flex items-center gap-3.5">
+                                       <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center font-black border border-emerald-500/30">
+                                           $$
+                                       </div>
                                        <div>
-                                           <p className="text-xl font-bold text-white tracking-tight">Investimentos</p>
+                                           <p className="text-xs text-slate-400 font-bold">{language === 'pt-BR' ? 'Investimentos Ativos' : 'Active Investments'}</p>
+                                           <p className="text-lg font-black text-emerald-400">
+                                             {interactiveBenefitCurrency === 'BRL' ? 'R$ 85.000,00' : '$ 15.740,00'}
+                                           </p>
+                                       </div>
+                                   </div>
+                                   <span className="text-[10px] font-extrabold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                     +R$ 3.420
+                                   </span>
+                               </div>
+
+                               {/* Reserva */}
+                               <div className="p-5 bg-white/[0.04] border border-white/10 rounded-2xl flex items-center justify-between">
+                                   <div className="flex items-center gap-3.5">
+                                       <div className="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center font-black border border-blue-500/30">
+                                           <PiggyBank className="w-5 h-5 text-blue-400" />
+                                       </div>
+                                       <div>
+                                           <p className="text-xs text-slate-400 font-bold">{language === 'pt-BR' ? 'Reserva de Emergência' : 'Emergency Fund'}</p>
+                                           <p className="text-lg font-black text-blue-400">
+                                             {interactiveBenefitCurrency === 'BRL' ? 'R$ 42.000,00' : '$ 7.770,00'}
+                                           </p>
+                                       </div>
+                                   </div>
+                                   <span className="text-[10px] font-extrabold text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                                     100% CDI
+                                   </span>
+                               </div>
+                           </div>
+
+                           {/* Card de Cartão de Crédito Black & Limites */}
+                           <div className="p-5 bg-white/[0.04] border border-white/10 rounded-2xl space-y-3">
+                               <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-3">
+                                       <div className="w-10 h-7 bg-gradient-to-tr from-slate-900 via-slate-800 to-slate-700 rounded-lg border border-amber-400/40 flex items-center justify-center shadow">
+                                           <div className="w-2.5 h-2 bg-amber-400/80 rounded-sm"></div>
+                                       </div>
+                                       <div>
+                                           <h5 className="text-sm font-bold text-white">Cartão Black Infinite</h5>
+                                           <p className="text-[11px] text-slate-400">{language === 'pt-BR' ? 'Fatura atual fecha em 5 dias' : 'Statement closes in 5 days'}</p>
                                        </div>
                                    </div>
                                    <div className="text-right">
-                                       <span className="text-2xl font-black text-[#22c55e] drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]">R$ 15.000,00</span>
+                                       <span className="text-xs text-slate-400 font-bold block">{language === 'pt-BR' ? 'Fatura Atual' : 'Current Bill'}</span>
+                                       <span className="text-sm font-black text-amber-400">{interactiveBenefitCurrency === 'BRL' ? 'R$ 4.280,00' : '$ 792,00'}</span>
                                    </div>
-                                </div>
+                               </div>
+
+                               <div>
+                                   <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                                       <span>{language === 'pt-BR' ? 'Limite Disponível' : 'Available Limit'}: <strong className="text-emerald-400">{interactiveBenefitCurrency === 'BRL' ? 'R$ 18.500,00' : '$ 3.425,00'}</strong></span>
+                                       <span>{language === 'pt-BR' ? 'Total' : 'Total'}: {interactiveBenefitCurrency === 'BRL' ? 'R$ 30.000,00' : '$ 5.555,00'}</span>
+                                   </div>
+                                   <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                       <div className="h-full bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full" style={{ width: '62%' }}></div>
+                                   </div>
+                               </div>
                            </div>
 
-                           {/* Elementos decorativos */}
-                           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px]"></div>
+                           {/* Card Notificação com IA */}
+                           <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-start gap-3.5">
+                               <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl shrink-0 mt-0.5">
+                                   <Sparkles className="w-4 h-4" />
+                               </div>
+                               <div className="text-xs">
+                                   <p className="font-extrabold text-purple-300 uppercase tracking-wider text-[10px]">
+                                     {language === 'pt-BR' ? 'Alerta Inteligente de IA' : 'AI Financial Insight'}
+                                   </p>
+                                   <p className="text-slate-200 mt-0.5 leading-relaxed font-medium">
+                                     {language === 'pt-BR' 
+                                       ? 'Identificamos que você economizou R$ 480,00 este mês renegociando 2 assinaturas automáticas.'
+                                       : 'We detected you saved $89.00 this month by optimizing 2 automated subscriptions.'}
+                                   </p>
+                               </div>
+                           </div>
+
+                           {/* Mini Feed de Transações Sincronizadas */}
+                           <div className="pt-2 border-t border-white/10 space-y-2">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                 {language === 'pt-BR' ? 'Últimas Movimentações Sincronizadas' : 'Recent Synced Transactions'}
+                               </p>
+                               
+                               <div className="flex items-center justify-between text-xs py-1 text-slate-300">
+                                   <span className="flex items-center gap-2">
+                                       <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                       Faturamento GTS Software
+                                   </span>
+                                   <span className="font-black text-emerald-400">{interactiveBenefitCurrency === 'BRL' ? '+ R$ 12.500,00' : '+ $ 2.314,00'}</span>
+                               </div>
+
+                               <div className="flex items-center justify-between text-xs py-1 text-slate-300">
+                                   <span className="flex items-center gap-2">
+                                       <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                                       Dividendos de Fundos Imobiliários
+                                   </span>
+                                   <span className="font-black text-blue-400">{interactiveBenefitCurrency === 'BRL' ? '+ R$ 450,00' : '+ $ 83,30'}</span>
+                               </div>
+                           </div>
+
                       </div>
                   </div>
+
               </div>
           </div>
       </section>
@@ -628,19 +1111,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-[#020617] text-slate-400 py-16">
+      <footer className="bg-[#020617] text-slate-400 py-16 border-t border-white/5">
           <div className="max-w-7xl mx-auto px-6 text-center">
-              <div className="flex items-center justify-center gap-2.5 mb-8">
-                  <img 
-                    src="/icon-192.png" 
-                    alt="Money Dashs" 
-                    className="w-8 h-8 rounded-xl object-cover shadow-md ring-1 ring-white/20" 
-                  />
-                  <span className="text-xl font-bold text-white">Money Dashs</span>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/10 pb-8">
+                  <div className="flex items-center gap-2.5">
+                      <img 
+                        src="/icon-192.png" 
+                        alt="Money Dashs" 
+                        className="w-8 h-8 rounded-xl object-cover shadow-md ring-1 ring-white/20" 
+                      />
+                      <span className="text-xl font-bold text-white">Money Dashs</span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+                      <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-white transition-colors">{t('features')}</a>
+                      <a href="#qualidades" onClick={(e) => scrollToSection(e, 'qualidades')} className="hover:text-white transition-colors">{language === 'pt-BR' ? 'Qualidades' : 'Qualities'}</a>
+                      <a href="#app-mobile" onClick={(e) => scrollToSection(e, 'app-mobile')} className="hover:text-white transition-colors flex items-center gap-1.5">
+                        <Smartphone className="w-4 h-4 text-blue-400" />
+                        <span>{language === 'pt-BR' ? 'App Mobile' : 'Mobile App'}</span>
+                      </a>
+                      <a href="#beneficios" onClick={(e) => scrollToSection(e, 'beneficios')} className="hover:text-white transition-colors">{t('benefits')}</a>
+                      <a href="#planos" onClick={(e) => scrollToSection(e, 'planos')} className="hover:text-white transition-colors">{t('plans')}</a>
+                  </div>
+
+                  <button 
+                    onClick={handleOpenInstall}
+                    className="px-5 py-2.5 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-xs font-bold border border-blue-500/30 transition-all flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{language === 'pt-BR' ? 'Baixar App' : 'Get App'}</span>
+                  </button>
               </div>
               <p className="text-xs">© 2025 Money Dashs. Powered by <span className="text-blue-500 font-bold">GTS Global Tech Software</span>.</p>
           </div>
       </footer>
+
+      {/* Modal de Instalação do App */}
+      <InstallAppModal 
+        isOpen={isInstallModalOpen} 
+        onClose={() => setIsInstallModalOpen(false)} 
+        language={language} 
+      />
     </div>
   );
 };
