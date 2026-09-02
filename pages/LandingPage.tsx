@@ -41,7 +41,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShieldAlert,
-  Repeat
+  Repeat,
+  RotateCcw
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -633,103 +634,183 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister, onOpenIn
               </div>
             </div>
 
-            {/* Coluna Mockup Celular */}
+            {/* Coluna Mockup Celular Realista */}
             <div className="w-full lg:w-1/2 flex justify-center">
               <div className="relative w-full max-w-[340px] sm:max-w-[380px]">
                 {/* Efeito Glow */}
                 <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[3rem] blur-2xl opacity-30 animate-pulse"></div>
 
                 {/* Moldura do Celular */}
-                <div className="relative bg-[#0b1120] border-[6px] border-slate-700/80 rounded-[2.8rem] p-3 shadow-2xl overflow-hidden ring-1 ring-white/20">
+                <div className="relative bg-[#0b1120] border-[8px] border-slate-700/90 rounded-[3rem] p-3 shadow-2xl overflow-hidden ring-1 ring-white/20">
                   {/* Speaker & Camera Notch */}
-                  <div className="flex justify-center items-center gap-2 py-2 mb-2">
-                    <div className="w-14 h-4 bg-slate-900 rounded-full flex items-center justify-center">
+                  <div className="flex justify-center items-center gap-2 py-1.5 mb-1.5">
+                    <div className="w-16 h-4 bg-slate-900 rounded-full flex items-center justify-center">
                       <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
                     </div>
                   </div>
 
-                  {/* Tela do App no Celular */}
-                  <div className="bg-[#0f172a] rounded-[2.2rem] p-4 text-white space-y-4 border border-white/5">
-                    {/* Header Mobile */}
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  {/* Tela do App no Celular - 100% Fiel à Interface Real do Mobile (Tema Claro Nativo) */}
+                  <div className="bg-[#f8fafc] rounded-[2.2rem] overflow-hidden text-slate-800 shadow-inner flex flex-col justify-between border border-slate-200 min-h-[560px]">
+                    
+                    {/* Top Bar Mobile Real */}
+                    <div className="bg-white px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10">
+                      <div className="flex items-center gap-3">
+                        <button className="text-slate-600 hover:text-slate-900">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                        </button>
+                      </div>
+
                       <div className="flex items-center gap-2.5">
-                        <img src="/icon-192.png" alt="Money Dashs" className="w-8 h-8 rounded-xl object-cover shadow ring-1 ring-white/20" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 font-medium leading-none">Aplicativo Ativo</p>
-                          <h4 className="text-xs font-bold text-white leading-tight">Money Dashs</h4>
+                        {/* Botão + Flutuante */}
+                        <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md shadow-blue-500/30 text-lg font-bold">
+                          +
+                        </div>
+                        {/* Botão Ajuda ? */}
+                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 text-sm font-bold bg-white">
+                          ?
+                        </div>
+                        {/* Notificações com Badge */}
+                        <div className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 bg-white">
+                          <BellRing className="w-4 h-4 text-slate-600" />
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                            6
+                          </span>
+                        </div>
+                        {/* Avatar VG */}
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-black flex items-center justify-center border border-blue-200">
+                          VG
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-extrabold rounded-full">
-                        ● Online
-                      </span>
                     </div>
 
-                    {/* Saldo no App */}
-                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-4 rounded-2xl shadow-lg relative overflow-hidden">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Saldo Total Líquido</p>
-                          <h3 className="text-xl font-extrabold text-white mt-1">R$ 148.750,00</h3>
-                        </div>
-                        <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full text-white">BRL</span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px] text-blue-100 pt-2 border-t border-white/10">
-                        <span>Investimentos: R$ 85.000</span>
-                        <span className="font-bold text-emerald-300">+24.8%</span>
-                      </div>
-                    </div>
-
-                    {/* Ações Rápidas Mobile */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
-                        <ArrowDownRight className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-                        <span className="text-[10px] font-bold block text-slate-200">Receita</span>
-                      </div>
-                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
-                        <ArrowUpRight className="w-4 h-4 text-red-400 mx-auto mb-1" />
-                        <span className="text-[10px] font-bold block text-slate-200">Despesa</span>
-                      </div>
-                      <div className="p-2.5 bg-white/5 rounded-xl text-center border border-white/10">
-                        <CreditCard className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                        <span className="text-[10px] font-bold block text-slate-200">Cartões</span>
-                      </div>
-                    </div>
-
-                    {/* Últimas Transações Mobile */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hoje</p>
+                    {/* Conteúdo do Dashboard Mobile Real */}
+                    <div className="p-4 space-y-3.5 flex-1 overflow-y-auto">
                       
-                      <div className="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center justify-center text-[10px] font-bold">✓</div>
-                          <div>
-                            <p className="font-bold text-white text-[11px]">Faturamento GTS</p>
-                            <p className="text-[9px] text-slate-400">Banco Inter</p>
-                          </div>
-                        </div>
-                        <span className="font-bold text-emerald-400 text-xs">+ R$ 12.500</span>
+                      {/* Título & Resumo */}
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">Dashboard</h2>
+                        <p className="text-xs text-slate-400 font-medium">Resumo em BRL</p>
                       </div>
 
-                      <div className="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center text-[10px] font-bold">$</div>
-                          <div>
-                            <p className="font-bold text-white text-[11px]">Dividendos XP</p>
-                            <p className="text-[9px] text-slate-400">Ações & FIIs</p>
-                          </div>
+                      {/* Seletor BRL / USD Real */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-white rounded-xl p-1 border border-slate-200 shadow-sm">
+                          <button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-extrabold shadow-sm">
+                            BRL
+                          </button>
+                          <button className="px-4 py-1.5 text-slate-600 hover:text-slate-900 rounded-lg text-xs font-extrabold">
+                            USD
+                          </button>
                         </div>
-                        <span className="font-bold text-blue-400 text-xs">+ R$ 450,00</span>
+                        <div className="w-9 h-9 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-sm">
+                          <Repeat className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      {/* Seletor de Data */}
+                      <div className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-sm flex items-center justify-between text-xs font-bold text-slate-700">
+                        <div className="flex items-center gap-2 text-blue-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
+                            <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
+                            <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />
+                          </svg>
+                          <span className="text-slate-800">Setembro De 2026</span>
+                        </div>
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+
+                      {/* CARD 1: Saldo Disponível */}
+                      <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center gap-3.5">
+                        <div className="w-11 h-11 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase block">
+                            Saldo Disponível
+                          </span>
+                          <span className="text-xl font-black text-slate-900 tracking-tight">
+                            R$ 48.750,00
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CARD 2: Total Investido */}
+                      <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center gap-3.5">
+                        <div className="w-11 h-11 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase block">
+                            Total Investido
+                          </span>
+                          <span className="text-xl font-black text-slate-900 tracking-tight">
+                            R$ 125.400,00
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CARD 3: Recebido no Mês */}
+                      <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center gap-3.5">
+                        <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
+                          <ArrowUpRight className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase block">
+                            Recebido no Mês
+                          </span>
+                          <span className="text-xl font-black text-emerald-600 tracking-tight">
+                            R$ 28.500,00
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CARD 4: Saídas no Mês */}
+                      <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center gap-3.5">
+                        <div className="w-11 h-11 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center shrink-0">
+                          <ArrowDownRight className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase block">
+                            Saídas no Mês
+                          </span>
+                          <span className="text-xl font-black text-slate-900 tracking-tight">
+                            R$ 4.230,00
+                          </span>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Barra Inferior de Navegação Mobile Real (Bottom Bar) */}
+                    <div className="bg-white border-t border-slate-200 px-2 py-2 flex items-center justify-between shrink-0">
+                      <div className="flex flex-col items-center gap-1 text-blue-600 flex-1">
+                        <LayoutDashboard className="w-4 h-4" />
+                        <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-[54px]">Painel De C...</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 flex-1">
+                        <Repeat className="w-4 h-4" />
+                        <span className="text-[8px] font-bold uppercase tracking-tight truncate max-w-[54px]">Transações</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 flex-1">
+                        <RotateCcw className="w-4 h-4" />
+                        <span className="text-[8px] font-bold uppercase tracking-tight truncate max-w-[54px]">Assinatur...</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 flex-1">
+                        <CreditCard className="w-4 h-4" />
+                        <span className="text-[8px] font-bold uppercase tracking-tight truncate max-w-[54px]">Créditos</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 flex-1">
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="text-[8px] font-bold uppercase tracking-tight truncate max-w-[54px]">Investimen...</span>
                       </div>
                     </div>
 
-                    {/* Botão de Instalar no Mockup */}
-                    <button 
-                      onClick={handleOpenInstall}
-                      className="w-full py-2.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-black shadow transition-all flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-3.5 h-3.5 text-blue-600" />
-                      {language === 'pt-BR' ? 'Instalar no Meu Celular' : 'Install on My Phone'}
-                    </button>
                   </div>
                 </div>
               </div>
